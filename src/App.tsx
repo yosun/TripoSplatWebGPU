@@ -1,12 +1,20 @@
-import { startTransition, useEffect, useRef, useState } from 'react'
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
 
 import './App.css'
-import { SplatPreview } from './components/SplatPreview'
+import { EmbedSnippet } from './components/EmbedSnippet'
+import { SplatPreview, type CameraSnapshot } from './components/SplatPreview'
+import { SplatPreviewControls } from './components/SplatPreviewControls'
 import { estimateFocalLengthFromFile, type FocalEstimate } from './lib/focal'
 import { imageFileToSharpTensor, readImageInfo } from './lib/image'
+import { readSharpViewerMeta, writeSharpViewerMeta, type SharpViewerMeta } from './lib/plyMetadata'
 import { DEFAULT_MAX_GAUSSIANS, DEFAULT_OPACITY_THRESHOLD, DEFAULT_WEB_MODEL_URL } from './lib/sharpConstants'
 import { SharpWorkerClient } from './lib/sharpWorkerClient'
 import type { WorkerStatusMessage } from './workers/messages'
+
+const DEFAULT_BG_COLOR = '#101014'
+const DEFAULT_FOV = 60
+const DEFAULT_AUTO_ROTATE = false
+const DEFAULT_MAX_SCREEN_SIZE = 2048
 
 interface SelectedImage {
   file: File
@@ -17,7 +25,8 @@ interface SelectedImage {
 }
 
 interface GenerationResult {
-  plyUrl: string
+  previewPlyUrl: string
+  downloadPlyUrl: string
   downloadName: string
   selectedGaussians: number
   totalGaussians: number
@@ -67,7 +76,16 @@ function App() {
   const [errorText, setErrorText] = useState<string | null>(null)
 
   const [result, setResult] = useState<GenerationResult | null>(null)
+  const [plyBytes, setPlyBytes] = useState<Uint8Array | null>(null)
   const [generationKey, setGenerationKey] = useState(0)
+
+  const [bgColor, setBgColor] = useState<string>(DEFAULT_BG_COLOR)
+  const [fov, setFov] = useState<number>(DEFAULT_FOV)
+  const [autoRotate, setAutoRotate] = useState<boolean>(DEFAULT_AUTO_ROTATE)
+  const [maxScreenSize, setMaxScreenSize] = useState<number>(DEFAULT_MAX_SCREEN_SIZE)
+  const [bakedMeta, setBakedMeta] = useState<SharpViewerMeta | null>(null)
+  const [saveStatus, setSaveStatus] = useState<string | undefined>(undefined)
+  const cameraSnapshotRef = useRef<CameraSnapshot | null>(null)
 
   useEffect(() => {
     const worker = new SharpWorkerClient((message) => {
@@ -108,7 +126,10 @@ function App() {
         URL.revokeObjectURL(selectedImage.previewUrl)
       }
       if (result) {
-        URL.revokeObjectURL(result.plyUrl)
+        URL.revokeObjectURL(result.previewPlyUrl)
+        if (result.downloadPlyUrl !== result.previewPlyUrl) {
+          URL.revokeObjectURL(result.downloadPlyUrl)
+        }
       }
     }
   }, [selectedImage, result])
@@ -124,6 +145,42 @@ function App() {
     ? `${result.selectedGaussians.toLocaleString()} / ${result.totalGaussians.toLocaleString()} gaussians (${resultRatio.toFixed(1)}%) • ${formatBytes(result.fileSizeBytes)}`
     : null
 
+  const handleCameraChange = useCallback((snap: CameraSnapshot) => {
+    cameraSnapshotRef.current = snap
+  }, [])
+
+  const handleSaveDefaults = useCallback(() => {
+    if (!plyBytes) return
+    const camera = cameraSnapshotRef.current
+    const meta: SharpViewerMeta = {
+      ...(camera ? { cameraPosition: camera.position, cameraTarget: camera.target, cameraUp: camera.up } : {}),
+      bgColor,
+      fov,
+      autoRotate,
+      maxScreenSize,
+    }
+    let nextBytes: Uint8Array
+    try {
+      nextBytes = writeSharpViewerMeta(plyBytes, meta)
+    } catch (error) {
+      setSaveStatus(`Save failed: ${error instanceof Error ? error.message : String(error)}`)
+      return
+    }
+    setPlyBytes(nextBytes)
+    setBakedMeta(meta)
+    const blob = new Blob([nextBytes as BlobPart], { type: 'application/octet-stream' })
+    const url = URL.createObjectURL(blob)
+    setResult((previous) => {
+      if (!previous) return previous
+      if (previous.downloadPlyUrl !== previous.previewPlyUrl) {
+        URL.revokeObjectURL(previous.downloadPlyUrl)
+      }
+      return { ...previous, downloadPlyUrl: url, fileSizeBytes: blob.size }
+    })
+    setSaveStatus('Baked into download')
+    window.setTimeout(() => setSaveStatus(undefined), 2000)
+  }, [plyBytes, bgColor, fov, autoRotate, maxScreenSize])
+
   const handleImageSelection = async (file: File | null) => {
     if (!file) {
       setSelectedImage((previous) => {
@@ -132,7 +189,7 @@ function App() {
       })
       setManualFocalPx(null)
       setResult((previous) => {
-        if (previous) URL.revokeObjectURL(previous.plyUrl)
+        if (previous) { URL.revokeObjectURL(previous.previewPlyUrl); if (previous.downloadPlyUrl !== previous.previewPlyUrl) URL.revokeObjectURL(previous.downloadPlyUrl) }
         return null
       })
       setStatusText('Upload an image to begin.')
@@ -164,7 +221,7 @@ function App() {
       setManualFocalPx(focalEstimate.focalPx)
       setStatusText('Image ready. Configure settings and generate the splat.')
       setResult((previous) => {
-        if (previous) URL.revokeObjectURL(previous.plyUrl)
+        if (previous) { URL.revokeObjectURL(previous.previewPlyUrl); if (previous.downloadPlyUrl !== previous.previewPlyUrl) URL.revokeObjectURL(previous.downloadPlyUrl) }
         return null
       })
       setGenerationKey((key) => key + 1)
@@ -213,17 +270,36 @@ function App() {
         maxGaussians,
       })
 
-      const blob = new Blob([inference.plyBuffer as ArrayBuffer], {
-        type: 'application/octet-stream',
-      })
+      const bytes = new Uint8Array(inference.plyBuffer as ArrayBuffer)
+      const blob = new Blob([bytes as BlobPart], { type: 'application/octet-stream' })
       const plyUrl = URL.createObjectURL(blob)
       const elapsedMs = performance.now() - startTime
 
+      const meta = readSharpViewerMeta(bytes)
+
       startTransition(() => {
+        setPlyBytes(bytes)
+        setBakedMeta(meta)
+        if (meta?.bgColor) setBgColor(meta.bgColor)
+        else setBgColor(DEFAULT_BG_COLOR)
+        if (meta?.fov !== undefined) setFov(meta.fov)
+        else setFov(DEFAULT_FOV)
+        if (meta?.autoRotate !== undefined) setAutoRotate(meta.autoRotate)
+        else setAutoRotate(DEFAULT_AUTO_ROTATE)
+        if (meta?.maxScreenSize !== undefined) setMaxScreenSize(meta.maxScreenSize)
+        else setMaxScreenSize(DEFAULT_MAX_SCREEN_SIZE)
+        cameraSnapshotRef.current = null
+        setSaveStatus(undefined)
         setResult((previous) => {
-          if (previous) URL.revokeObjectURL(previous.plyUrl)
+          if (previous) {
+            URL.revokeObjectURL(previous.previewPlyUrl)
+            if (previous.downloadPlyUrl !== previous.previewPlyUrl) {
+              URL.revokeObjectURL(previous.downloadPlyUrl)
+            }
+          }
           return {
-            plyUrl,
+            previewPlyUrl: plyUrl,
+            downloadPlyUrl: plyUrl,
             downloadName: inference.outputName ?? toOutputName(selectedImage.file.name),
             selectedGaussians: inference.selectedGaussians,
             totalGaussians: inference.totalGaussians,
@@ -378,7 +454,7 @@ function App() {
             </button>
             <a
               className={`btn ${result ? '' : 'btn-disabled'}`}
-              href={result?.plyUrl ?? undefined}
+              href={result?.downloadPlyUrl ?? undefined}
               download={result?.downloadName ?? 'sharp-output.ply'}
               aria-disabled={!result}
               onClick={(event) => {
@@ -397,6 +473,8 @@ function App() {
             {errorText ? <p className="error-text">{errorText}</p> : null}
             {resultSummary ? <p className="result-text">{resultSummary}</p> : null}
           </div>
+
+          {result ? <EmbedSnippet /> : null}
         </section>
         </div>
 
@@ -419,7 +497,34 @@ function App() {
           </div>
         </section>
 
-          <SplatPreview plyUrl={result?.plyUrl ?? null} generationKey={generationKey} />
+          <SplatPreview
+            plyUrl={result?.previewPlyUrl ?? null}
+            generationKey={generationKey}
+            initialCameraPosition={bakedMeta?.cameraPosition}
+            initialCameraTarget={bakedMeta?.cameraTarget}
+            initialCameraUp={bakedMeta?.cameraUp}
+            bgColor={bgColor}
+            fov={fov}
+            autoRotate={autoRotate}
+            maxScreenSize={maxScreenSize}
+            onCameraChange={handleCameraChange}
+          >
+            {result ? (
+              <SplatPreviewControls
+                bgColor={bgColor}
+                onBgColor={setBgColor}
+                fov={fov}
+                onFov={setFov}
+                maxScreenSize={maxScreenSize}
+                onMaxScreenSize={setMaxScreenSize}
+                autoRotate={autoRotate}
+                onAutoRotate={setAutoRotate}
+                onSaveDefaults={handleSaveDefaults}
+                saveDisabled={!plyBytes}
+                saveStatus={saveStatus}
+              />
+            ) : null}
+          </SplatPreview>
         </div>
       </main>
 

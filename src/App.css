@@ -403,8 +403,122 @@ a.btn:not(.btn-disabled) {
 .preview-panel {
   padding: 0.9rem;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   min-height: 0;
+  gap: 0.75rem;
+}
+
+.preview-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.preview-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.preview-controls-actions {
+  justify-content: space-between;
+}
+
+.preview-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font: 500 0.78rem/1 'IBM Plex Mono', monospace;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.preview-control-grow {
+  flex: 1;
+  min-width: 160px;
+}
+
+.preview-control-checkbox {
+  cursor: pointer;
+}
+
+.preview-control input[type='color'] {
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.preview-control input[type='range'] {
+  flex: 1;
+  min-width: 100px;
+}
+
+.preview-control input[type='number'] {
+  width: 84px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  font: 500 0.85rem/1.2 'Manrope', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.preview-save-status {
+  font: 500 0.75rem/1.1 'IBM Plex Mono', monospace;
+  color: var(--ink-faint);
+}
+
+.embed-snippet {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: var(--surface);
+}
+
+.embed-snippet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.embed-snippet-title {
+  font: 700 0.78rem/1 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+
+.embed-snippet-copy {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.74rem;
+}
+
+.embed-snippet-text {
+  width: 100%;
+  resize: vertical;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  font: 500 0.78rem/1.4 'IBM Plex Mono', monospace;
+  background: #fafafa;
+  color: var(--ink);
+}
+
+.embed-snippet-hint {
+  color: var(--ink-faint);
+  font-size: 0.74rem;
+  line-height: 1.4;
 }
 
 .preview-toolbar {

@@ -8,7 +8,7 @@ export interface SharpViewerMeta {
   cameraPosition?: [number, number, number]
   cameraTarget?: [number, number, number]
   cameraUp?: [number, number, number]
-  focalAdjustment?: number
+  fov?: number
   bgColor?: string
   maxScreenSize?: number
   autoRotate?: boolean
@@ -85,10 +85,10 @@ export function readSharpViewerMeta(buf: Uint8Array): SharpViewerMeta | null {
         }
         break
       }
-      case 'focal-adjustment': {
+      case 'fov': {
         const n = Number(value)
-        if (Number.isFinite(n)) {
-          meta.focalAdjustment = n
+        if (Number.isFinite(n) && n > 0 && n < 180) {
+          meta.fov = n
           touched = true
         }
         break
@@ -132,8 +132,7 @@ export function writeSharpViewerMeta(buf: Uint8Array, meta: SharpViewerMeta): Ui
   if (meta.cameraPosition) commentLines.push(`${COMMENT_PREFIX}camera-position ${formatTriple(meta.cameraPosition)}`)
   if (meta.cameraTarget) commentLines.push(`${COMMENT_PREFIX}camera-target ${formatTriple(meta.cameraTarget)}`)
   if (meta.cameraUp) commentLines.push(`${COMMENT_PREFIX}camera-up ${formatTriple(meta.cameraUp)}`)
-  if (meta.focalAdjustment !== undefined)
-    commentLines.push(`${COMMENT_PREFIX}focal-adjustment ${formatNumber(meta.focalAdjustment)}`)
+  if (meta.fov !== undefined) commentLines.push(`${COMMENT_PREFIX}fov ${formatNumber(meta.fov)}`)
   if (meta.bgColor) commentLines.push(`${COMMENT_PREFIX}bg-color ${meta.bgColor}`)
   if (meta.maxScreenSize !== undefined)
     commentLines.push(`${COMMENT_PREFIX}max-screen-size ${Math.round(meta.maxScreenSize)}`)
