@@ -3,6 +3,7 @@ export interface WorkerStatusMessage {
   requestId?: string
   stage: 'idle' | 'loading-model' | 'running-inference' | 'filtering' | 'building-ply'
   message: string
+  progress?: number
 }
 
 export interface LoadModelRequestPayload {

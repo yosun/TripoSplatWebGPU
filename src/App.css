@@ -328,6 +328,53 @@ a.btn:not(.btn-disabled) {
   box-shadow: 0 0 0 4px rgb(31 82 214 / 12%);
 }
 
+.progress-bar {
+  margin-top: 0.55rem;
+  height: 8px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), #6796ff);
+  transition: width 120ms ease;
+}
+
+.model-loader {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.model-loader-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.model-loader-btn[disabled] {
+  opacity: 0.85;
+  cursor: default;
+}
+
+.model-loader[data-state='loaded'] .model-loader-btn {
+  background: linear-gradient(135deg, #2bb673, #1f8f53);
+  border-color: #0f0f0f;
+  color: #fff;
+}
+
+.model-loader-hint {
+  font: 500 0.74rem/1.3 'IBM Plex Mono', monospace;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .status-card[data-stage='running-inference'] .status-dot {
   background: var(--yellow);
   box-shadow: 0 0 0 4px rgb(242 179 24 / 18%);

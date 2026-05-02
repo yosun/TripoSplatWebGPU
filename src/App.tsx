@@ -71,13 +71,17 @@ function App() {
   const [maxGaussians, setMaxGaussians] = useState(DEFAULT_MAX_GAUSSIANS)
 
   const [isBusy, setIsBusy] = useState(false)
-  const [statusText, setStatusText] = useState<string>('Upload an image to begin.')
+  const [statusText, setStatusText] = useState<string>('Load the model to begin.')
   const [workerStage, setWorkerStage] = useState<WorkerStatusMessage['stage']>('idle')
+  const [workerProgress, setWorkerProgress] = useState<number | undefined>(undefined)
   const [errorText, setErrorText] = useState<string | null>(null)
 
   const [result, setResult] = useState<GenerationResult | null>(null)
   const [plyBytes, setPlyBytes] = useState<Uint8Array | null>(null)
   const [generationKey, setGenerationKey] = useState(0)
+
+  const [modelLoadState, setModelLoadState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+  const loadedModelUrlRef = useRef<string | null>(null)
 
   const [bgColor, setBgColor] = useState<string>(DEFAULT_BG_COLOR)
   const [fov, setFov] = useState<number>(DEFAULT_FOV)
@@ -91,6 +95,7 @@ function App() {
     const worker = new SharpWorkerClient((message) => {
       setWorkerStage(message.stage)
       setStatusText(message.message)
+      setWorkerProgress(message.progress)
     })
     workerRef.current = worker
 
@@ -137,7 +142,40 @@ function App() {
   const effectiveModelUrl = modelFileUrl ?? DEFAULT_WEB_MODEL_URL
   const focalPx = manualFocalPx ?? selectedImage?.focalEstimate.focalPx ?? 0
 
-  const canGenerate = Boolean(selectedImage && effectiveModelUrl && focalPx > 0 && !isBusy)
+  const modelLoaded = modelLoadState === 'loaded' && loadedModelUrlRef.current === effectiveModelUrl
+  const canLoadModel = Boolean(effectiveModelUrl) && modelLoadState !== 'loading'
+  const canGenerate = Boolean(
+    selectedImage && effectiveModelUrl && focalPx > 0 && !isBusy && modelLoaded,
+  )
+
+  useEffect(() => {
+    if (loadedModelUrlRef.current && loadedModelUrlRef.current !== effectiveModelUrl) {
+      loadedModelUrlRef.current = null
+      setModelLoadState('idle')
+      setStatusText('Model URL changed — load the model again to proceed.')
+    }
+  }, [effectiveModelUrl])
+
+  const handleLoadModel = useCallback(async () => {
+    if (!workerRef.current || !effectiveModelUrl) return
+    setModelLoadState('loading')
+    setErrorText(null)
+    setStatusText('Starting model download…')
+    setWorkerStage('loading-model')
+    try {
+      await workerRef.current.loadModel({ modelUrl: effectiveModelUrl })
+      loadedModelUrlRef.current = effectiveModelUrl
+      setModelLoadState('loaded')
+      setStatusText('Model loaded. Upload an image and generate.')
+      setWorkerStage('idle')
+    } catch (error) {
+      setModelLoadState('error')
+      const message = error instanceof Error ? error.message : String(error)
+      setErrorText(`Model load failed: ${message}`)
+      setStatusText('Model load failed.')
+      setWorkerStage('idle')
+    }
+  }, [effectiveModelUrl])
 
   const resultRatio =
     result && result.totalGaussians > 0 ? (100 * result.selectedGaussians) / result.totalGaussians : 0
@@ -362,6 +400,28 @@ function App() {
           <section className="panel controls-panel">
           <h2>Inputs</h2>
 
+          <div className="model-loader" data-state={modelLoadState}>
+            <div className="model-loader-row">
+              <button
+                type="button"
+                className="btn btn-primary model-loader-btn"
+                onClick={() => void handleLoadModel()}
+                disabled={!canLoadModel || modelLoaded}
+              >
+                {modelLoadState === 'loading'
+                  ? 'Loading…'
+                  : modelLoaded
+                    ? 'Model loaded ✓'
+                    : modelLoadState === 'error'
+                      ? 'Retry load'
+                      : 'Load model'}
+              </button>
+              <span className="model-loader-hint">
+                SHARP predictor (~2.4 GB) • required before generating
+              </span>
+            </div>
+          </div>
+
           <label className="field">
             <span>Image</span>
             <input
@@ -470,6 +530,11 @@ function App() {
               <span className="status-dot" />
               <span>{statusText}</span>
             </div>
+            {workerProgress !== undefined && workerProgress < 1 ? (
+              <div className="progress-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(workerProgress * 100)}>
+                <div className="progress-bar-fill" style={{ width: `${(workerProgress * 100).toFixed(1)}%` }} />
+              </div>
+            ) : null}
             {errorText ? <p className="error-text">{errorText}</p> : null}
             {resultSummary ? <p className="result-text">{resultSummary}</p> : null}
           </div>

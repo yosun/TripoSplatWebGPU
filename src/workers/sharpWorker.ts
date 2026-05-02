@@ -37,8 +37,9 @@ function postStatus(
   stage: WorkerStatusMessage['stage'],
   message: string,
   requestId?: string,
+  progress?: number,
 ): void {
-  postMessageSafe({ type: 'status', stage, message, requestId })
+  postMessageSafe({ type: 'status', stage, message, requestId, progress })
 }
 
 function postError(requestId: string, error: unknown): void {
@@ -52,47 +53,146 @@ function postError(requestId: string, error: unknown): void {
   postMessageSafe(reply)
 }
 
-function getSession(modelUrl: string): Promise<ort.InferenceSession> {
+function getSession(modelUrl: string, requestId?: string): Promise<ort.InferenceSession> {
   const cached = sessionCache.get(modelUrl)
   if (cached) {
     return cached
   }
 
-  const sessionPromise = createSession(modelUrl)
+  const sessionPromise = createSession(modelUrl, requestId)
   sessionCache.set(modelUrl, sessionPromise)
+  // If the load fails, drop the cache entry so the user can retry.
+  sessionPromise.catch(() => {
+    if (sessionCache.get(modelUrl) === sessionPromise) {
+      sessionCache.delete(modelUrl)
+    }
+  })
   return sessionPromise
 }
 
-async function createSession(modelUrl: string): Promise<ort.InferenceSession> {
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
+function formatProgress(received: number, total: number, label: string): string {
+  if (total > 0) {
+    const pct = Math.floor((received / total) * 100)
+    return `${label} ${pct}% (${formatBytes(received)} / ${formatBytes(total)})`
+  }
+  return `${label} (${formatBytes(received)})`
+}
+
+async function fetchBytesWithProgress(
+  url: string,
+  label: string,
+  requestId?: string,
+): Promise<Uint8Array> {
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} ${res.statusText} fetching ${url}`)
+  }
+
+  const total = Number(res.headers.get('content-length') || 0)
+  const reader = res.body?.getReader()
+  if (!reader) {
+    const buf = await res.arrayBuffer()
+    return new Uint8Array(buf)
+  }
+
+  let received = 0
+  let lastReport = 0
+  const reportEveryMs = 150
+
+  if (total > 0) {
+    const out = new Uint8Array(total)
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (!value) continue
+      out.set(value, received)
+      received += value.byteLength
+      const now = performance.now()
+      if (now - lastReport > reportEveryMs) {
+        postStatus(
+          'loading-model',
+          formatProgress(received, total, label),
+          requestId,
+          total > 0 ? received / total : undefined,
+        )
+        lastReport = now
+      }
+    }
+    postStatus('loading-model', formatProgress(received, total, label), requestId, 1)
+    return out
+  }
+
+  // No content-length header — fall back to chunk list.
+  const chunks: Uint8Array[] = []
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (!value) continue
+    chunks.push(value)
+    received += value.byteLength
+    const now = performance.now()
+    if (now - lastReport > reportEveryMs) {
+      postStatus('loading-model', formatProgress(received, 0, label), requestId)
+      lastReport = now
+    }
+  }
+  const out = new Uint8Array(received)
+  let offset = 0
+  for (const chunk of chunks) {
+    out.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return out
+}
+
+async function createSession(modelUrl: string, requestId?: string): Promise<ort.InferenceSession> {
   const baseSessionOptions: ort.InferenceSession.SessionOptions = {
     graphOptimizationLevel: 'all',
   }
 
+  let sidecarBytes: Uint8Array | null = null
+  let sidecarPath: string | null = null
   try {
     const resolved = new URL(modelUrl, self.location.href)
     if (resolved.pathname.endsWith('.onnx')) {
       const sidecarUrl = new URL(resolved.href)
       sidecarUrl.pathname = `${resolved.pathname}.data`
-      const sidecarPath = `${resolved.pathname.split('/').pop() ?? 'model.onnx'}.data`
-
-      baseSessionOptions.externalData = [
-        {
-          path: sidecarPath,
-          data: sidecarUrl.href,
-        },
-      ]
+      sidecarPath = `${resolved.pathname.split('/').pop() ?? 'model.onnx'}.data`
+      sidecarBytes = await fetchBytesWithProgress(sidecarUrl.href, 'Loading model weights', requestId)
     }
-  } catch {
-    // Ignore URL parsing failures (e.g. unusual local/blob cases). ORT will still attempt to load the model.
+  } catch (err) {
+    // Re-throw fetch errors; URL parsing failures are silently ignored (handled by ORT).
+    if (err instanceof Error && err.message.startsWith('HTTP')) {
+      throw err
+    }
   }
 
+  if (sidecarBytes && sidecarPath) {
+    baseSessionOptions.externalData = [
+      {
+        path: sidecarPath,
+        data: sidecarBytes,
+      },
+    ]
+  }
+
+  postStatus('loading-model', 'Loading model graph…', requestId)
+  const modelBytes = await fetchBytesWithProgress(modelUrl, 'Loading model graph', requestId)
+
+  postStatus('loading-model', 'Initializing ONNX Runtime…', requestId)
   try {
-    return await ort.InferenceSession.create(modelUrl, {
+    return await ort.InferenceSession.create(modelBytes, {
       ...baseSessionOptions,
       executionProviders: ['webgpu', 'wasm'],
     })
   } catch (webGpuError) {
-    return ort.InferenceSession.create(modelUrl, {
+    return ort.InferenceSession.create(modelBytes, {
       ...baseSessionOptions,
       executionProviders: ['wasm'],
     }).catch((wasmError) => {
@@ -576,8 +676,8 @@ function validateModelInputs(session: ort.InferenceSession): { supportsWrapperSc
 }
 
 async function handleLoadModel(requestId: string, payload: LoadModelRequestPayload): Promise<void> {
-  postStatus('loading-model', 'Loading ONNX model…', requestId)
-  const session = await getSession(payload.modelUrl)
+  postStatus('loading-model', 'Starting model download…', requestId)
+  const session = await getSession(payload.modelUrl, requestId)
   validateModelInputs(session)
 
   const reply: WorkerReply = {
@@ -600,7 +700,7 @@ async function handleRunInference(
     throw new Error('Focal length must be a positive finite number.')
   }
 
-  const session = await getSession(payload.modelUrl)
+  const session = await getSession(payload.modelUrl, requestId)
   const { supportsWrapperScalars } = validateModelInputs(session)
 
   const imageTensorData = new Float32Array(payload.imageTensor)
