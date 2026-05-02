@@ -69,7 +69,7 @@ export function SplatPreview({ plyUrl, generationKey }: SplatPreviewProps) {
   }, [plyUrl, generationKey])
 
   return (
-    <div className="preview-panel">
+    <section className="panel preview-panel">
       <div className="preview-toolbar">
         <span className="preview-title">Gaussian Splat Preview</span>
         <span className="preview-status">{viewerStatus}</span>
@@ -78,6 +78,6 @@ export function SplatPreview({ plyUrl, generationKey }: SplatPreviewProps) {
         <div ref={containerRef} className="splat-canvas-host" />
         {!plyUrl ? <div className="splat-empty">Generate a splat to preview it here.</div> : null}
       </div>
-    </div>
+    </section>
   )
 }
