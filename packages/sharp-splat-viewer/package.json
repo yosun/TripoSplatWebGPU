@@ -1,0 +1,50 @@
+{
+  "name": "@bring-shrubbery/sharp-splat-viewer",
+  "version": "0.1.0",
+  "description": "Drop-in <sharp-splat> Web Component for SHARP-generated Gaussian splat .ply files. Reads baked-in default camera and render settings from the file's PLY header.",
+  "type": "module",
+  "main": "./dist/sharp-splat-viewer.es.js",
+  "module": "./dist/sharp-splat-viewer.es.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/sharp-splat-viewer.es.js"
+    },
+    "./iife": "./dist/sharp-splat-viewer.iife.js"
+  },
+  "scripts": {
+    "build": "vite build && vite build --mode iife",
+    "build:watch": "vite build --watch"
+  },
+  "keywords": [
+    "gaussian-splats",
+    "ply",
+    "web-component",
+    "viewer",
+    "3d",
+    "sharp"
+  ],
+  "homepage": "https://github.com/bring-shrubbery/ml-sharp-web/tree/main/packages/sharp-splat-viewer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bring-shrubbery/ml-sharp-web.git",
+    "directory": "packages/sharp-splat-viewer"
+  },
+  "license": "MIT",
+  "peerDependencies": {
+    "@mkkellogg/gaussian-splats-3d": "^0.4.7",
+    "three": "^0.183.0"
+  },
+  "devDependencies": {
+    "@mkkellogg/gaussian-splats-3d": "^0.4.7",
+    "three": "^0.183.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4"
+  }
+}
