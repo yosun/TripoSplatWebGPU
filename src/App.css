@@ -581,6 +581,87 @@ a.btn:not(.btn-disabled):hover {
   color: var(--ink-faint);
 }
 
+.preview-transform {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.55rem;
+}
+
+.preview-transform-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.preview-transform-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  min-width: 64px;
+}
+
+.preview-transform-axis {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.preview-transform-axis > span {
+  width: 18px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.preview-transform-axis input[type='number'] {
+  width: 64px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.3rem 0.45rem;
+  font-family: var(--font-system);
+  font-size: 0.82rem;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.preview-transform-nudge {
+  padding: 0.25rem 0.45rem;
+  font-size: 0.72rem;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+
+.preview-transform-flip {
+  width: 36px;
+  padding: 0.4rem 0;
+  text-align: center;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.preview-transform-flip.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.preview-transform-reset {
+  margin-left: auto;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.preview-transform-reset:hover:not(:disabled):not(.btn-disabled) {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
 .embed-snippet {
   margin-top: 1rem;
   display: flex;

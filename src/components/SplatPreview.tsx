@@ -18,6 +18,9 @@ interface SplatPreviewProps {
   fov: number
   autoRotate: boolean
   maxScreenSize: number
+  splatPosition: [number, number, number]
+  splatRotation: [number, number, number]
+  splatFlip: [boolean, boolean, boolean]
   onCameraChange?: (snap: CameraSnapshot) => void
   children?: ReactNode
 }
@@ -32,6 +35,9 @@ export function SplatPreview({
   fov,
   autoRotate,
   maxScreenSize,
+  splatPosition,
+  splatRotation,
+  splatFlip,
   onCameraChange,
   children,
 }: SplatPreviewProps) {
@@ -41,6 +47,15 @@ export function SplatPreview({
 
   const onCameraChangeRef = useRef(onCameraChange)
   onCameraChangeRef.current = onCameraChange
+
+  // Refs hold the latest transform values so the mount effect can apply them
+  // when the viewer is recreated, without restarting on every transform change.
+  const splatPositionRef = useRef(splatPosition)
+  const splatRotationRef = useRef(splatRotation)
+  const splatFlipRef = useRef(splatFlip)
+  splatPositionRef.current = splatPosition
+  splatRotationRef.current = splatRotation
+  splatFlipRef.current = splatFlip
 
   useEffect(() => {
     let cancelled = false
@@ -67,6 +82,7 @@ export function SplatPreview({
         ignoreDevicePixelRatio: false,
         inMemoryCompressionLevel: 0,
         maxScreenSpaceSplatSize: maxScreenSize,
+        dynamicScene: true,
       }
       if (initialCameraPosition) viewerOptions.initialCameraPosition = initialCameraPosition
       if (initialCameraTarget) viewerOptions.initialCameraLookAt = initialCameraTarget
@@ -77,14 +93,31 @@ export function SplatPreview({
 
       try {
         localViewer.start()
-        await localViewer.addSplatScene(plyUrl, {
+        const initialPos = splatPositionRef.current
+        const initialRot = splatRotationRef.current
+        const initialFlip = splatFlipRef.current
+        const sceneOptions: Record<string, unknown> = {
           format: module.SceneFormat.Ply,
           showLoadingUI: false,
           splatAlphaRemovalThreshold: 1,
-        })
+        }
+        if (initialPos.some((n) => n !== 0)) sceneOptions.position = initialPos
+        if (initialRot.some((n) => n !== 0)) {
+          sceneOptions.rotation = eulerDegToQuaternion(initialRot)
+        }
+        if (initialFlip.some(Boolean)) {
+          sceneOptions.scale = flipsToScale(initialFlip)
+        }
+
+        await localViewer.addSplatScene(plyUrl, sceneOptions)
         if (cancelled) return
 
         applyLiveSettings(localViewer, { bgColor, fov, autoRotate })
+        applySplatTransform(localViewer, {
+          position: splatPositionRef.current,
+          rotation: splatRotationRef.current,
+          flip: splatFlipRef.current,
+        })
         attachCameraReporter(localViewer, () => onCameraChangeRef.current)
 
         setViewerStatus('Preview ready. Drag to orbit, scroll to zoom.')
@@ -115,6 +148,16 @@ export function SplatPreview({
     if (!viewer) return
     applyLiveSettings(viewer, { bgColor, fov, autoRotate })
   }, [bgColor, fov, autoRotate])
+
+  useEffect(() => {
+    const viewer = viewerRef.current
+    if (!viewer) return
+    applySplatTransform(viewer, {
+      position: splatPosition,
+      rotation: splatRotation,
+      flip: splatFlip,
+    })
+  }, [splatPosition, splatRotation, splatFlip])
 
   return (
     <section className="panel preview-panel">
@@ -148,6 +191,75 @@ function applyLiveSettings(
     controls.autoRotate = settings.autoRotate
     if (settings.autoRotate) controls.autoRotateSpeed = 1.0
   }
+}
+
+interface SplatTransform {
+  position: [number, number, number]
+  rotation: [number, number, number]
+  flip: [boolean, boolean, boolean]
+}
+
+interface Vec3Like {
+  set(x: number, y: number, z: number): void
+}
+
+interface QuatLike {
+  setFromEuler(euler: { x: number; y: number; z: number; order?: string }): void
+}
+
+interface SceneObject {
+  position?: Vec3Like
+  quaternion?: QuatLike
+  scale?: Vec3Like
+}
+
+interface SplatMeshLike {
+  scenes?: SceneObject[]
+  getScene?(index: number): SceneObject | null | undefined
+  updateTransforms?(): void
+}
+
+function applySplatTransform(viewer: Viewer, transform: SplatTransform): void {
+  const splatMesh = (viewer as unknown as { splatMesh?: SplatMeshLike }).splatMesh
+  if (!splatMesh) return
+  const scene = splatMesh.getScene?.(0) ?? splatMesh.scenes?.[0]
+  if (!scene) return
+
+  scene.position?.set(transform.position[0], transform.position[1], transform.position[2])
+
+  if (scene.quaternion) {
+    const radX = (transform.rotation[0] * Math.PI) / 180
+    const radY = (transform.rotation[1] * Math.PI) / 180
+    const radZ = (transform.rotation[2] * Math.PI) / 180
+    scene.quaternion.setFromEuler({ x: radX, y: radY, z: radZ, order: 'XYZ' } as never)
+  }
+
+  const sx = transform.flip[0] ? -1 : 1
+  const sy = transform.flip[1] ? -1 : 1
+  const sz = transform.flip[2] ? -1 : 1
+  scene.scale?.set(sx, sy, sz)
+
+  splatMesh.updateTransforms?.()
+}
+
+function eulerDegToQuaternion(rot: [number, number, number]): [number, number, number, number] {
+  // ZYX order to match Three.js's default Euler (XYZ extrinsic == ZYX intrinsic).
+  const cx = Math.cos((rot[0] * Math.PI) / 360)
+  const sx = Math.sin((rot[0] * Math.PI) / 360)
+  const cy = Math.cos((rot[1] * Math.PI) / 360)
+  const sy = Math.sin((rot[1] * Math.PI) / 360)
+  const cz = Math.cos((rot[2] * Math.PI) / 360)
+  const sz = Math.sin((rot[2] * Math.PI) / 360)
+  // XYZ Euler -> quaternion (Three.js convention)
+  const x = sx * cy * cz + cx * sy * sz
+  const y = cx * sy * cz - sx * cy * sz
+  const z = cx * cy * sz + sx * sy * cz
+  const w = cx * cy * cz - sx * sy * sz
+  return [x, y, z, w]
+}
+
+function flipsToScale(flip: [boolean, boolean, boolean]): [number, number, number] {
+  return [flip[0] ? -1 : 1, flip[1] ? -1 : 1, flip[2] ? -1 : 1]
 }
 
 function attachCameraReporter(viewer: Viewer, getCallback: () => ((snap: CameraSnapshot) => void) | undefined): void {

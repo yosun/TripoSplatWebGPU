@@ -15,6 +15,9 @@ const DEFAULT_BG_COLOR = '#101014'
 const DEFAULT_FOV = 60
 const DEFAULT_AUTO_ROTATE = false
 const DEFAULT_MAX_SCREEN_SIZE = 2048
+const DEFAULT_SPLAT_POSITION: [number, number, number] = [0, 0, 0]
+const DEFAULT_SPLAT_ROTATION: [number, number, number] = [0, 0, 0]
+const DEFAULT_SPLAT_FLIP: [boolean, boolean, boolean] = [false, false, false]
 
 interface SelectedImage {
   file: File
@@ -87,6 +90,9 @@ function App() {
   const [fov, setFov] = useState<number>(DEFAULT_FOV)
   const [autoRotate, setAutoRotate] = useState<boolean>(DEFAULT_AUTO_ROTATE)
   const [maxScreenSize, setMaxScreenSize] = useState<number>(DEFAULT_MAX_SCREEN_SIZE)
+  const [splatPosition, setSplatPosition] = useState<[number, number, number]>(DEFAULT_SPLAT_POSITION)
+  const [splatRotation, setSplatRotation] = useState<[number, number, number]>(DEFAULT_SPLAT_ROTATION)
+  const [splatFlip, setSplatFlip] = useState<[boolean, boolean, boolean]>(DEFAULT_SPLAT_FLIP)
   const [bakedMeta, setBakedMeta] = useState<SharpViewerMeta | null>(null)
   const [saveStatus, setSaveStatus] = useState<string | undefined>(undefined)
   const cameraSnapshotRef = useRef<CameraSnapshot | null>(null)
@@ -211,6 +217,9 @@ function App() {
       fov,
       autoRotate,
       maxScreenSize,
+      ...(splatPosition.some((n) => n !== 0) ? { splatPosition } : {}),
+      ...(splatRotation.some((n) => n !== 0) ? { splatRotation } : {}),
+      ...(splatFlip.some(Boolean) ? { splatFlip } : {}),
     }
     let nextBytes: Uint8Array
     try {
@@ -232,7 +241,13 @@ function App() {
     })
     setSaveStatus('Baked into download')
     window.setTimeout(() => setSaveStatus(undefined), 2000)
-  }, [plyBytes, bgColor, fov, autoRotate, maxScreenSize])
+  }, [plyBytes, bgColor, fov, autoRotate, maxScreenSize, splatPosition, splatRotation, splatFlip])
+
+  const handleResetTransform = useCallback(() => {
+    setSplatPosition(DEFAULT_SPLAT_POSITION)
+    setSplatRotation(DEFAULT_SPLAT_ROTATION)
+    setSplatFlip(DEFAULT_SPLAT_FLIP)
+  }, [])
 
   const handleImageSelection = async (file: File | null) => {
     if (!file) {
@@ -341,6 +356,9 @@ function App() {
         else setAutoRotate(DEFAULT_AUTO_ROTATE)
         if (meta?.maxScreenSize !== undefined) setMaxScreenSize(meta.maxScreenSize)
         else setMaxScreenSize(DEFAULT_MAX_SCREEN_SIZE)
+        setSplatPosition(meta?.splatPosition ?? DEFAULT_SPLAT_POSITION)
+        setSplatRotation(meta?.splatRotation ?? DEFAULT_SPLAT_ROTATION)
+        setSplatFlip(meta?.splatFlip ?? DEFAULT_SPLAT_FLIP)
         cameraSnapshotRef.current = null
         setSaveStatus(undefined)
         setResult((previous) => {
@@ -622,6 +640,9 @@ function App() {
             fov={fov}
             autoRotate={autoRotate}
             maxScreenSize={maxScreenSize}
+            splatPosition={splatPosition}
+            splatRotation={splatRotation}
+            splatFlip={splatFlip}
             onCameraChange={handleCameraChange}
           >
             {result ? (
@@ -634,6 +655,13 @@ function App() {
                 onMaxScreenSize={setMaxScreenSize}
                 autoRotate={autoRotate}
                 onAutoRotate={setAutoRotate}
+                splatPosition={splatPosition}
+                onSplatPosition={setSplatPosition}
+                splatRotation={splatRotation}
+                onSplatRotation={setSplatRotation}
+                splatFlip={splatFlip}
+                onSplatFlip={setSplatFlip}
+                onResetTransform={handleResetTransform}
                 onSaveDefaults={handleSaveDefaults}
                 saveDisabled={!plyBytes}
                 saveStatus={saveStatus}

@@ -21,6 +21,9 @@ interface SharpViewerMeta {
   bgColor?: string
   maxScreenSize?: number
   autoRotate?: boolean
+  splatPosition?: [number, number, number]
+  splatRotation?: [number, number, number]
+  splatFlip?: [boolean, boolean, boolean]
 }
 
 const OBSERVED_ATTRS = [
@@ -32,6 +35,9 @@ const OBSERVED_ATTRS = [
   'fov',
   'max-screen-size',
   'auto-rotate',
+  'splat-position',
+  'splat-rotation',
+  'splat-flip',
 ] as const
 
 interface ResolvedSettings {
@@ -42,6 +48,9 @@ interface ResolvedSettings {
   fov: number
   maxScreenSize: number
   autoRotate: boolean
+  splatPosition: [number, number, number]
+  splatRotation: [number, number, number]
+  splatFlip: [boolean, boolean, boolean]
 }
 
 const DEFAULTS = {
@@ -49,9 +58,29 @@ const DEFAULTS = {
   fov: 60,
   maxScreenSize: 2048,
   autoRotate: false,
+  splatPosition: [0, 0, 0] as [number, number, number],
+  splatRotation: [0, 0, 0] as [number, number, number],
+  splatFlip: [false, false, false] as [boolean, boolean, boolean],
 } as const
 
 const RECREATE_ATTRS = new Set<string>(['src', 'max-screen-size', 'camera-position', 'camera-target', 'camera-up'])
+
+interface Vec3Like {
+  set(x: number, y: number, z: number): void
+}
+interface QuatLike {
+  setFromEuler(euler: { x: number; y: number; z: number; order?: string }): void
+}
+interface SceneObject {
+  position?: Vec3Like
+  quaternion?: QuatLike
+  scale?: Vec3Like
+}
+interface SplatMeshLike {
+  scenes?: SceneObject[]
+  getScene?(index: number): SceneObject | null | undefined
+  updateTransforms?(): void
+}
 
 interface ViewerLike {
   start: () => void
@@ -60,6 +89,7 @@ interface ViewerLike {
   camera?: { fov?: number; updateProjectionMatrix?: () => void }
   renderer?: { setClearColor?: (c: string) => void }
   controls?: { autoRotate?: boolean; autoRotateSpeed?: number }
+  splatMesh?: SplatMeshLike
 }
 
 interface SplatLib {
@@ -174,21 +204,35 @@ export class SharpSplatElement extends HTMLElement {
       sharedMemoryForWorkers: false,
       ignoreDevicePixelRatio: false,
       maxScreenSpaceSplatSize: settings.maxScreenSize,
+      dynamicScene: true,
     }
     if (settings.cameraPosition) viewerOptions.initialCameraPosition = settings.cameraPosition
     if (settings.cameraTarget) viewerOptions.initialCameraLookAt = settings.cameraTarget
     if (settings.cameraUp) viewerOptions.cameraUp = settings.cameraUp
+
+    const sceneOptions: Record<string, unknown> = {
+      format: lib.SceneFormat.Ply,
+      showLoadingUI: false,
+      splatAlphaRemovalThreshold: 1,
+    }
+    if (settings.splatPosition.some((n) => n !== 0)) sceneOptions.position = settings.splatPosition
+    if (settings.splatRotation.some((n) => n !== 0)) {
+      sceneOptions.rotation = eulerDegToQuaternion(settings.splatRotation)
+    }
+    if (settings.splatFlip.some(Boolean)) {
+      sceneOptions.scale = [
+        settings.splatFlip[0] ? -1 : 1,
+        settings.splatFlip[1] ? -1 : 1,
+        settings.splatFlip[2] ? -1 : 1,
+      ]
+    }
 
     let viewer: ViewerLike
     try {
       viewer = new lib.Viewer(viewerOptions)
       this.viewer = viewer
       viewer.start()
-      await viewer.addSplatScene(blobUrl, {
-        format: lib.SceneFormat.Ply,
-        showLoadingUI: false,
-        splatAlphaRemovalThreshold: 1,
-      })
+      await viewer.addSplatScene(blobUrl, sceneOptions)
       if (token !== this.inflightToken) {
         void viewer.dispose().catch(() => undefined)
         return
@@ -218,6 +262,22 @@ export class SharpSplatElement extends HTMLElement {
       viewer.controls.autoRotate = settings.autoRotate
       if (settings.autoRotate) viewer.controls.autoRotateSpeed = 1.0
     }
+
+    const scene = viewer.splatMesh?.getScene?.(0) ?? viewer.splatMesh?.scenes?.[0]
+    if (scene) {
+      scene.position?.set(...settings.splatPosition)
+      if (scene.quaternion) {
+        const radX = (settings.splatRotation[0] * Math.PI) / 180
+        const radY = (settings.splatRotation[1] * Math.PI) / 180
+        const radZ = (settings.splatRotation[2] * Math.PI) / 180
+        scene.quaternion.setFromEuler({ x: radX, y: radY, z: radZ, order: 'XYZ' } as never)
+      }
+      const sx = settings.splatFlip[0] ? -1 : 1
+      const sy = settings.splatFlip[1] ? -1 : 1
+      const sz = settings.splatFlip[2] ? -1 : 1
+      scene.scale?.set(sx, sy, sz)
+      viewer.splatMesh?.updateTransforms?.()
+    }
   }
 
   private resolveSettings(bytes: Uint8Array): ResolvedSettings {
@@ -232,6 +292,9 @@ export class SharpSplatElement extends HTMLElement {
       fov: merged.fov ?? DEFAULTS.fov,
       maxScreenSize: merged.maxScreenSize ?? DEFAULTS.maxScreenSize,
       autoRotate: merged.autoRotate ?? DEFAULTS.autoRotate,
+      splatPosition: merged.splatPosition ?? [...DEFAULTS.splatPosition] as [number, number, number],
+      splatRotation: merged.splatRotation ?? [...DEFAULTS.splatRotation] as [number, number, number],
+      splatFlip: merged.splatFlip ?? [...DEFAULTS.splatFlip] as [boolean, boolean, boolean],
     }
   }
 
@@ -258,6 +321,21 @@ export class SharpSplatElement extends HTMLElement {
     if (this.hasAttribute('auto-rotate')) {
       const v = this.getAttribute('auto-rotate')
       out.autoRotate = v == null || v === '' || v === 'true' || v === '1'
+    }
+    const sp = parseTriple(this.getAttribute('splat-position'))
+    if (sp) out.splatPosition = sp
+    const sr = parseTriple(this.getAttribute('splat-rotation'))
+    if (sr) out.splatRotation = sr
+    const sf = this.getAttribute('splat-flip')
+    if (sf) {
+      const parts = sf.split(/[\s,]+/).filter((s) => s.length > 0)
+      if (parts.length === 3) {
+        out.splatFlip = [
+          parts[0] === '1' || parts[0].toLowerCase() === 'true',
+          parts[1] === '1' || parts[1].toLowerCase() === 'true',
+          parts[2] === '1' || parts[2].toLowerCase() === 'true',
+        ]
+      }
     }
     return out
   }
@@ -290,6 +368,20 @@ function parseTriple(value: string | null): [number, number, number] | undefined
     .map(Number)
   if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return undefined
   return [parts[0], parts[1], parts[2]]
+}
+
+function eulerDegToQuaternion(rot: [number, number, number]): [number, number, number, number] {
+  const cx = Math.cos((rot[0] * Math.PI) / 360)
+  const sx = Math.sin((rot[0] * Math.PI) / 360)
+  const cy = Math.cos((rot[1] * Math.PI) / 360)
+  const sy = Math.sin((rot[1] * Math.PI) / 360)
+  const cz = Math.cos((rot[2] * Math.PI) / 360)
+  const sz = Math.sin((rot[2] * Math.PI) / 360)
+  const x = sx * cy * cz + cx * sy * sz
+  const y = cx * sy * cz - sx * cy * sz
+  const z = cx * cy * sz + sx * sy * cz
+  const w = cx * cy * cz - sx * sy * sz
+  return [x, y, z, w]
 }
 
 if (typeof customElements !== 'undefined' && !customElements.get('sharp-splat')) {

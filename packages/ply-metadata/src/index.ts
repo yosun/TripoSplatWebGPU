@@ -12,6 +12,9 @@ export interface SharpViewerMeta {
   bgColor?: string
   maxScreenSize?: number
   autoRotate?: boolean
+  splatPosition?: [number, number, number]
+  splatRotation?: [number, number, number]
+  splatFlip?: [boolean, boolean, boolean]
 }
 
 export interface PlyHeaderInfo {
@@ -113,6 +116,30 @@ export function readSharpViewerMeta(buf: Uint8Array): SharpViewerMeta | null {
         touched = true
         break
       }
+      case 'splat-position': {
+        const t = parseTriple(value)
+        if (t) {
+          meta.splatPosition = t
+          touched = true
+        }
+        break
+      }
+      case 'splat-rotation': {
+        const t = parseTriple(value)
+        if (t) {
+          meta.splatRotation = t
+          touched = true
+        }
+        break
+      }
+      case 'splat-flip': {
+        const parts = value.split(/\s+/).map((s) => s === '1' || s.toLowerCase() === 'true')
+        if (parts.length === 3) {
+          meta.splatFlip = [parts[0], parts[1], parts[2]]
+          touched = true
+        }
+        break
+      }
     }
   }
 
@@ -137,6 +164,14 @@ export function writeSharpViewerMeta(buf: Uint8Array, meta: SharpViewerMeta): Ui
   if (meta.maxScreenSize !== undefined)
     commentLines.push(`${COMMENT_PREFIX}max-screen-size ${Math.round(meta.maxScreenSize)}`)
   if (meta.autoRotate !== undefined) commentLines.push(`${COMMENT_PREFIX}auto-rotate ${meta.autoRotate ? 1 : 0}`)
+  if (meta.splatPosition)
+    commentLines.push(`${COMMENT_PREFIX}splat-position ${formatTriple(meta.splatPosition)}`)
+  if (meta.splatRotation)
+    commentLines.push(`${COMMENT_PREFIX}splat-rotation ${formatTriple(meta.splatRotation)}`)
+  if (meta.splatFlip)
+    commentLines.push(
+      `${COMMENT_PREFIX}splat-flip ${meta.splatFlip.map((b) => (b ? 1 : 0)).join(' ')}`,
+    )
 
   const formatIdx = filtered.findIndex((l) => l.startsWith('format '))
   if (formatIdx < 0) {
