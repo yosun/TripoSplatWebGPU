@@ -70,155 +70,64 @@ function getSession(modelUrl: string, requestId?: string): Promise<ort.Inference
   return sessionPromise
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
-}
-
-function formatProgress(received: number, total: number, label: string): string {
-  if (total > 0) {
-    const pct = Math.floor((received / total) * 100)
-    return `${label} ${pct}% (${formatBytes(received)} / ${formatBytes(total)})`
-  }
-  return `${label} (${formatBytes(received)})`
-}
-
-async function fetchBytesWithProgress(
-  url: string,
-  label: string,
-  requestId?: string,
-): Promise<Uint8Array> {
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} ${res.statusText} fetching ${url}`)
-  }
-
-  const total = Number(res.headers.get('content-length') || 0)
-  const reader = res.body?.getReader()
-  if (!reader) {
-    const buf = await res.arrayBuffer()
-    return new Uint8Array(buf)
-  }
-
-  let received = 0
-  let lastReport = 0
-  const reportEveryMs = 150
-
-  if (total > 0) {
-    const out = new Uint8Array(total)
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      if (!value) continue
-      out.set(value, received)
-      received += value.byteLength
-      const now = performance.now()
-      if (now - lastReport > reportEveryMs) {
-        postStatus(
-          'loading-model',
-          formatProgress(received, total, label),
-          requestId,
-          total > 0 ? received / total : undefined,
-        )
-        lastReport = now
-      }
-    }
-    postStatus('loading-model', formatProgress(received, total, label), requestId, 1)
-    return out
-  }
-
-  // No content-length header — fall back to chunk list.
-  const chunks: Uint8Array[] = []
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    if (!value) continue
-    chunks.push(value)
-    received += value.byteLength
-    const now = performance.now()
-    if (now - lastReport > reportEveryMs) {
-      postStatus('loading-model', formatProgress(received, 0, label), requestId)
-      lastReport = now
-    }
-  }
-  const out = new Uint8Array(received)
-  let offset = 0
-  for (const chunk of chunks) {
-    out.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return out
-}
-
 async function createSession(modelUrl: string, requestId?: string): Promise<ort.InferenceSession> {
   const baseSessionOptions: ort.InferenceSession.SessionOptions = {
     graphOptimizationLevel: 'all',
   }
 
-  let sidecarBlobUrl: string | null = null
-  let sidecarPath: string | null = null
   try {
     const resolved = new URL(modelUrl, self.location.href)
     if (resolved.pathname.endsWith('.onnx')) {
       const sidecarUrl = new URL(resolved.href)
       sidecarUrl.pathname = `${resolved.pathname}.data`
-      sidecarPath = `${resolved.pathname.split('/').pop() ?? 'model.onnx'}.data`
-      const sidecarBytes = await fetchBytesWithProgress(
-        sidecarUrl.href,
-        'Loading model weights',
-        requestId,
-      )
-      // ORT-web 1.24 doesn't initialize Module.MountedFiles when externalData is
-      // passed as a Uint8Array, so we hand it a blob: URL pointing at the bytes
-      // we already fetched. ORT's internal fetcher reads it instantly from
-      // memory while the user sees real download progress for our fetch.
-      const sidecarBlob = new Blob([sidecarBytes as BlobPart], { type: 'application/octet-stream' })
-      sidecarBlobUrl = URL.createObjectURL(sidecarBlob)
+      const sidecarPath = `${resolved.pathname.split('/').pop() ?? 'model.onnx'}.data`
+
+      baseSessionOptions.externalData = [
+        {
+          path: sidecarPath,
+          data: sidecarUrl.href,
+        },
+      ]
     }
-  } catch (err) {
-    if (err instanceof Error && err.message.startsWith('HTTP')) {
-      throw err
-    }
+  } catch {
+    // Ignore URL parsing failures; ORT will still attempt to load the model.
   }
 
-  if (sidecarBlobUrl && sidecarPath) {
-    baseSessionOptions.externalData = [
-      {
-        path: sidecarPath,
-        data: sidecarBlobUrl,
-      },
-    ]
+  // The 2.4 GB sidecar is fetched by ORT internally (via its mountExternalData
+  // path). We can't tap into that fetch for byte-level progress — pre-fetching
+  // ourselves and handing ORT bytes/blob URLs trips ORT's per-pthread
+  // MountedFiles bookkeeping. Drive a simple time-based heartbeat so the UI
+  // doesn't look stuck.
+  let heartbeat: ReturnType<typeof setInterval> | null = null
+  const startedAt = performance.now()
+  const tick = () => {
+    const elapsedSec = Math.floor((performance.now() - startedAt) / 1000)
+    const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0')
+    const ss = String(elapsedSec % 60).padStart(2, '0')
+    postStatus('loading-model', `Loading model (${mm}:${ss}) — this can take several minutes`, requestId)
   }
+  tick()
+  heartbeat = setInterval(tick, 1000)
 
-  postStatus('loading-model', 'Initializing ONNX Runtime…', requestId)
-  const sessionOptionsGpu: ort.InferenceSession.SessionOptions = {
-    ...baseSessionOptions,
-    executionProviders: ['webgpu', 'wasm'],
-  }
-  const sessionOptionsWasm: ort.InferenceSession.SessionOptions = {
-    ...baseSessionOptions,
-    executionProviders: ['wasm'],
-  }
-
-  // Pass the model itself as a URL (not bytes). ORT-web's external-data
-  // resolution path only initializes `Module.MountedFiles` correctly when the
-  // model load goes through the URL-fetch code path. The .onnx graph is small
-  // (~6 MB) so we trade its progress for the >2 GB sidecar progress, which is
-  // the only one users actually wait on.
   try {
     try {
-      return await ort.InferenceSession.create(modelUrl, sessionOptionsGpu)
+      return await ort.InferenceSession.create(modelUrl, {
+        ...baseSessionOptions,
+        executionProviders: ['webgpu', 'wasm'],
+      })
     } catch (webGpuError) {
-      return await ort.InferenceSession.create(modelUrl, sessionOptionsWasm).catch((wasmError) => {
+      return await ort.InferenceSession.create(modelUrl, {
+        ...baseSessionOptions,
+        executionProviders: ['wasm'],
+      }).catch((wasmError) => {
         throw new Error(
           `Could not create ONNX Runtime session with WebGPU or WASM. WebGPU error: ${String(webGpuError)}. WASM error: ${String(wasmError)}`,
         )
       })
     }
   } finally {
-    if (sidecarBlobUrl) {
-      URL.revokeObjectURL(sidecarBlobUrl)
+    if (heartbeat !== null) {
+      clearInterval(heartbeat)
     }
   }
 }
