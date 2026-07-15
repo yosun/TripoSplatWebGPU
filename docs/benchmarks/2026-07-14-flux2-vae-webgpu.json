@@ -1,0 +1,90 @@
+{
+  "recordedAtUtc": "2026-07-14T04:07:45Z",
+  "scope": "TripoSplat source-image preprocessing plus Flux VAE encoder vertical slice",
+  "fixture": "public/fixtures/generated/flux2-vae-fp32",
+  "fixtureSha256": {
+    "source.png": "ae7f560e7c3f217aa0b5ed5d53ad24cd6032049870b9c5a0e787a09564141e17",
+    "prepared.png": "5b0d0a2543eb1eef9685b5afa0960364f919cea85100e7b9f94b8a453c4d406a"
+  },
+  "modelSha256": {
+    "flux2_vae_encoder.onnx": "dd2e63e34a3afd35adc83aec9337aa3b415558e8946f57c1986a9ae5b92cff70",
+    "flux2_vae_encoder.onnx.data": "0c0498815644ab3bd24b21ce42588954e206392c9fe1db77844783a258e336e8"
+  },
+  "executionProvider": "webgpu",
+  "wasmFallbackAllowed": false,
+  "hardware": {
+    "model": "MacBook Pro (Mac15,9)",
+    "chip": "Apple M3 Max",
+    "cpuCores": 16,
+    "unifiedMemoryBytes": 137438953472,
+    "architecture": "arm64"
+  },
+  "software": {
+    "os": "macOS 26.3 (25D125)",
+    "browserUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "webgpuAdapterVendor": "apple",
+    "webgpuAdapterArchitecture": "metal-3",
+    "crossOriginIsolated": false
+  },
+  "modelTransferBytes": 137800544,
+  "modelLoadMs": 817,
+  "runs": [
+    {
+      "run": 1,
+      "inferenceMs": 1321.3999999761581,
+      "readbackMs": 0.3999999761581421,
+      "runtimeTotalMs": 1321.7999999523163,
+      "sourcePreprocessPlusEncodeMs": 1591.3000000715256
+    },
+    {
+      "run": 2,
+      "inferenceMs": 1298,
+      "readbackMs": 0.19999992847442627,
+      "runtimeTotalMs": 1298.1999999284744,
+      "sourcePreprocessPlusEncodeMs": 1601.6999999284744
+    },
+    {
+      "run": 3,
+      "inferenceMs": 1304.1000000238419,
+      "readbackMs": 0.2999999523162842,
+      "runtimeTotalMs": 1304.3999999761581,
+      "sourcePreprocessPlusEncodeMs": 1618.3000000715256
+    }
+  ],
+  "medianInferenceMs": 1304.1000000238419,
+  "medianSourcePreprocessPlusEncodeMs": 1601.6999999284744,
+  "preprocessingParity": {
+    "values": 3145728,
+    "mismatchedValues": 0,
+    "maxAbsoluteByteError": 0,
+    "meanAbsoluteByteError": 0,
+    "passed": true
+  },
+  "tensorParity": {
+    "values": 524928,
+    "maxAbsoluteError": 0.00016832351684570312,
+    "meanAbsoluteError": 0.000017171266397904487,
+    "rmse": 0.000022385025480954593,
+    "cosineSimilarity": 0.9999999996687682,
+    "finite": true,
+    "passed": true,
+    "tolerance": {
+      "maxAbsoluteError": 0.006,
+      "minimumCosineSimilarity": 0.99999
+    }
+  },
+  "mainRealmJsHeap": {
+    "source": "performance.memory",
+    "beforeLoadUsedBytes": 26863474,
+    "afterLoadUsedBytes": 25469678,
+    "afterThreeRunsUsedBytes": 59219068,
+    "afterThreeRunsTotalBytes": 65861164,
+    "heapLimitBytes": 4395630592,
+    "limitations": "These are measured main-realm JavaScript heap counters. Chromium does not expose ONNX worker, WebGPU buffer, driver, or total unified-memory residency to web content; these values must not be interpreted as total model memory."
+  },
+  "targetQualification": {
+    "appleSilicon": true,
+    "sixteenGigabyteDeviceTested": false,
+    "note": "This run validates Apple Silicon WebGPU execution, not the 16 GB minimum-memory target."
+  }
+}

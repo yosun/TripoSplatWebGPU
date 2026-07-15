@@ -1,0 +1,93 @@
+{
+  "date": "2026-07-15",
+  "stage": "TripoSplat 4-step fp32 CFG/Euler flow loop",
+  "passed": true,
+  "strictPassed": false,
+  "artifact": {
+    "graph": "public/models/triposplat/dit_step_webgpu_fp32.onnx",
+    "graphBytes": 10685614,
+    "graphSha256": "558a52ea5eb0a714ba76e1b273159fe16e473424fe39abb6cc0c4ad65b4bc54d",
+    "sidecarBytes": 1633210368,
+    "sidecarSha256": "eacadf21577a976ce0a635cf8b1bbdb4b2c0cdb9cb55d4d73af87957c1e72023",
+    "transferBytes": 1643895982
+  },
+  "fixture": {
+    "sourceCommit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "internalPrecision": "fp32",
+    "latentSha256": "1952c91ce8e5a3b5962c09ef878eb91eeae327d3f6c1184cb6051f6105f27ce6",
+    "cameraSha256": "d7552b9a2fcf7d77086ac42803f3f91968d236875d29436423a1dd77c25b4428"
+  },
+  "environment": {
+    "hardware": "Apple M3 Max, 128 GB unified memory",
+    "operatingSystem": "macOS 26.3 (25D125)",
+    "browser": "Chrome 150.0.0.0",
+    "executionProvider": "webgpu",
+    "crossOriginIsolated": false,
+    "wasmFallbackAllowed": false
+  },
+  "settings": {
+    "steps": 4,
+    "guidanceScale": 3,
+    "shift": 3,
+    "predictionArithmetic": "float32",
+    "conditionalInvocations": 4,
+    "unconditionalInvocations": 4
+  },
+  "timingsMs": {
+    "modelLoad": 11411.299999952316,
+    "summedInference": 102235.99999988079,
+    "summedReadback": 0.7000000476837158,
+    "samplingWall": 102268.79999995232,
+    "untouchedPyTorchMpsSampling": 24135.100500076078
+  },
+  "execution": {
+    "completed": true,
+    "webgpuInvocations": 8,
+    "fallbackUsed": false
+  },
+  "qualification": {
+    "tolerance": {
+      "absolute": 0.005,
+      "relative": 0.003,
+      "minimumCosineSimilarity": 0.99999998
+    },
+    "latent": {
+      "maxAbsoluteError": 0.004452109336853027,
+      "meanAbsoluteError": 0.0000777479686000504,
+      "rmse": 0.00012965174119819909,
+      "cosineSimilarity": 0.9999999884756972,
+      "fractionWithinTolerance": 1,
+      "passed": true
+    },
+    "camera": {
+      "maxAbsoluteError": 0.00004106760025024414,
+      "meanAbsoluteError": 0.000020658969879150392,
+      "rmse": 0.00002600253567654459,
+      "cosineSimilarity": 0.9999999985500022,
+      "fractionWithinTolerance": 1,
+      "passed": true
+    }
+  },
+  "strictDiagnostic": {
+    "tolerance": {
+      "absolute": 0.0001,
+      "relative": 0.001,
+      "minimumCosineSimilarity": 0.99999999
+    },
+    "latentFractionWithinTolerance": 0.9829483032226562,
+    "cameraFractionWithinTolerance": 1,
+    "passed": false
+  },
+  "memoryObservation": {
+    "scope": "coarse app-wide RSS, not isolated model peak",
+    "sampledAllCodexProcessesKiB": 7473840,
+    "sampledRendererProcessesKiB": 6350848,
+    "sampledGpuProcessKiB": 448528,
+    "warning": "Includes the Codex UI and other open validation tabs; it is not a 16 GB qualification result."
+  },
+  "limitations": [
+    "This is a single-machine, single-run browser measurement.",
+    "The target 16 GB Apple Silicon configuration and Microsoft Edge remain unvalidated.",
+    "The qualification gate passes; the separately recorded stricter diagnostic does not."
+  ]
+}

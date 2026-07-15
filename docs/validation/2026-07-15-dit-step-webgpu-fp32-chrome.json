@@ -1,0 +1,62 @@
+{
+  "date": "2026-07-15",
+  "stage": "TripoSplat one-step fp32 DiT",
+  "passed": true,
+  "artifact": {
+    "graph": "public/models/triposplat/dit_step_webgpu_fp32.onnx",
+    "graphBytes": 10685614,
+    "graphSha256": "558a52ea5eb0a714ba76e1b273159fe16e473424fe39abb6cc0c4ad65b4bc54d",
+    "sidecarBytes": 1633210368,
+    "sidecarSha256": "eacadf21577a976ce0a635cf8b1bbdb4b2c0cdb9cb55d4d73af87957c1e72023",
+    "transferBytes": 1643895982
+  },
+  "fixture": {
+    "sourceCommit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "internalPrecision": "fp32",
+    "predLatentSha256": "c9d4cdec972b04c8ba0476f7c7afb64e26259fed8803a96b7e0d0aaf6011f1b0",
+    "predCameraSha256": "f86cdca313a36f31d9cac224f1ef01fcddc946919d5f4468f1ae34739c6f1e60"
+  },
+  "environment": {
+    "hardware": "Apple M3 Max, 128 GB unified memory",
+    "operatingSystem": "macOS 26.3 (25D125)",
+    "browser": "Chrome 150.0.0.0",
+    "executionProvider": "webgpu",
+    "crossOriginIsolated": false,
+    "wasmFallbackAllowed": false
+  },
+  "timingsMs": {
+    "modelLoad": 12584.599999904633,
+    "inference": 11844.600000023842,
+    "readback": 0.8999999761581421
+  },
+  "tolerance": {
+    "absolute": 0.00002,
+    "relative": 0.001,
+    "minimumCosineSimilarity": 0.999999999
+  },
+  "outputs": {
+    "predLatent": {
+      "count": 131072,
+      "maxAbsoluteError": 0.0000057220458984375,
+      "meanAbsoluteError": 7.505832886334218e-7,
+      "rmse": 9.604607583182372e-7,
+      "cosineSimilarity": 0.9999999999995586,
+      "fractionWithinTolerance": 1,
+      "passed": true
+    },
+    "predCamera": {
+      "count": 5,
+      "maxAbsoluteError": 0.0000017881393432617188,
+      "meanAbsoluteError": 7.748603820800781e-7,
+      "rmse": 9.702933189928356e-7,
+      "cosineSimilarity": 0.9999999999996828,
+      "fractionWithinTolerance": 1,
+      "passed": true
+    }
+  },
+  "limitations": [
+    "This is one invocation on one Chrome/Apple Silicon configuration.",
+    "The result does not imply accumulated 4-step or 20-step final-state parity.",
+    "Microsoft Edge and the 16 GB Apple Silicon target remain unvalidated."
+  ]
+}

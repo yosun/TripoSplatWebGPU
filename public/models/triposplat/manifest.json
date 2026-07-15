@@ -1,0 +1,114 @@
+{
+  "name": "triposplat-webgpu",
+  "version": "0.1.0-fp32.20260715",
+  "modelRevision": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+  "precision": "fp32",
+  "estimatedModelBytes": 6465182402,
+  "graphs": {
+    "dino": {
+      "url": "dinov3_encoder_fp32.onnx",
+      "precision": "fp32",
+      "inputPrecision": "fp32",
+      "byteLength": 5804316,
+      "integrity": {
+        "algorithm": "sha256",
+        "digest": "9f7b1719c47ac833547a148506585db7b5d3b20a1d824b7185b696a3367ea4ae"
+      },
+      "externalData": [
+        {
+          "path": "dinov3_encoder_fp32.onnx.data",
+          "url": "dinov3_encoder_fp32.onnx.data",
+          "byteLength": 3362042880,
+          "integrity": {
+            "algorithm": "sha256",
+            "digest": "163bdfaee3be63958d540ac710b4901b932909abb61cecba86eeaab1518df6f5"
+          }
+        }
+      ]
+    },
+    "vae": {
+      "url": "flux2_vae_encoder.onnx",
+      "precision": "fp32",
+      "inputPrecision": "fp32",
+      "byteLength": 105824,
+      "integrity": {
+        "algorithm": "sha256",
+        "digest": "dd2e63e34a3afd35adc83aec9337aa3b415558e8946f57c1986a9ae5b92cff70"
+      },
+      "externalData": [
+        {
+          "path": "flux2_vae_encoder.onnx.data",
+          "url": "flux2_vae_encoder.onnx.data",
+          "byteLength": 137694720,
+          "integrity": {
+            "algorithm": "sha256",
+            "digest": "0c0498815644ab3bd24b21ce42588954e206392c9fe1db77844783a258e336e8"
+          }
+        }
+      ]
+    },
+    "dit": {
+      "url": "dit_step_webgpu_fp32.onnx",
+      "precision": "fp32",
+      "inputPrecision": "fp32",
+      "byteLength": 10685614,
+      "integrity": {
+        "algorithm": "sha256",
+        "digest": "558a52ea5eb0a714ba76e1b273159fe16e473424fe39abb6cc0c4ad65b4bc54d"
+      },
+      "externalData": [
+        {
+          "path": "dit_step_webgpu_fp32.onnx.data",
+          "url": "dit_step_webgpu_fp32.onnx.data",
+          "byteLength": 1633210368,
+          "integrity": {
+            "algorithm": "sha256",
+            "digest": "eacadf21577a976ce0a635cf8b1bbdb4b2c0cdb9cb55d4d73af87957c1e72023"
+          }
+        }
+      ]
+    },
+    "octree": {
+      "url": "octree_occupancy_decoder_fp32.onnx",
+      "precision": "fp32",
+      "inputPrecision": "fp32",
+      "byteLength": 1460100,
+      "integrity": {
+        "algorithm": "sha256",
+        "digest": "8eeb2482d06be411f363df240a9426c5ddca3a5f17d2ddef4a7e4c7533e0b3b3"
+      },
+      "externalData": [
+        {
+          "path": "octree_occupancy_decoder_fp32.onnx.data",
+          "url": "octree_occupancy_decoder_fp32.onnx.data",
+          "byteLength": 219959296,
+          "integrity": {
+            "algorithm": "sha256",
+            "digest": "88e2a1820b456a0601d9dc705748ccab607af1a4fc034a2bc000e36e04c3170a"
+          }
+        }
+      ]
+    },
+    "gaussianDecoder": {
+      "url": "gaussian_decoder_fp32.onnx",
+      "precision": "fp32",
+      "inputPrecision": "fp32",
+      "byteLength": 10821268,
+      "integrity": {
+        "algorithm": "sha256",
+        "digest": "41f8471e974a764e6855c3d12cdfbe0d3f21769505bfb7182c433aa6cd923541"
+      },
+      "externalData": [
+        {
+          "path": "gaussian_decoder_fp32.onnx.data",
+          "url": "gaussian_decoder_fp32.onnx.data",
+          "byteLength": 1083398016,
+          "integrity": {
+            "algorithm": "sha256",
+            "digest": "7520801efc2b204076842d64f09c2490d7009476ffa14871c3efb8876bab1d94"
+          }
+        }
+      ]
+    }
+  }
+}

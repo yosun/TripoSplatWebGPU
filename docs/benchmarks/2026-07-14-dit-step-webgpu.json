@@ -1,0 +1,46 @@
+{
+  "date": "2026-07-14",
+  "stage": "TripoSplat one-step DiT",
+  "artifact": {
+    "graph": "public/models/triposplat/dit_step.onnx",
+    "graphSha256": "eeab762b44144bfa4acbebffaaf9897cff8488d2baa0bd2cf478c1cf964590ad",
+    "sidecarSha256": "620965b2bb52c00874e709a6e8f175d20ea42a28f5f47a908e69bbd93fd0698f",
+    "transferBytes": 886297272
+  },
+  "environment": {
+    "hardware": "Apple M3 Max, 128 GB unified memory",
+    "operatingSystem": "macOS 26.3 (25D125)",
+    "browser": "Chrome 150.0.0.0",
+    "executionProvider": "webgpu",
+    "crossOriginIsolated": false,
+    "wasmFallbackAllowed": false
+  },
+  "timingsMs": {
+    "modelLoad": 10018.0,
+    "inference": 11283.300000071526,
+    "readback": 0.19999992847442627
+  },
+  "parityAgainstUntouchedPyTorch": {
+    "passed": true,
+    "tolerance": {
+      "absolute": 0.04,
+      "relative": 0.03,
+      "minimumCosineSimilarity": 0.9999
+    },
+    "predLatent": {
+      "maxAbsoluteError": 0.08203125,
+      "meanAbsoluteError": 0.008645927806810505,
+      "rmse": 0.011483757009828352,
+      "cosineSimilarity": 0.9999757465236631,
+      "fractionWithinTolerance": 1.0
+    },
+    "predCamera": {
+      "maxAbsoluteError": 0.0322265625,
+      "meanAbsoluteError": 0.01478271484375,
+      "rmse": 0.01846567183788981,
+      "cosineSimilarity": 0.9999574291835995,
+      "fractionWithinTolerance": 1.0
+    }
+  },
+  "scope": "One measured cold worker/session load and one measured DiT invocation on this machine only. This is not a 16 GB compatibility result."
+}

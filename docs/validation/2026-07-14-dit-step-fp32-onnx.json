@@ -1,0 +1,339 @@
+{
+  "adapter": {
+    "comparison_to_untouched_official": {
+      "pred_camera": {
+        "candidate_finite": true,
+        "cosine_similarity": 0.9999999999999319,
+        "count": 5,
+        "fraction_within_tolerance": 1.0,
+        "max_absolute_error": 6.854534149169922e-07,
+        "max_relative_error_at_1e-6_floor": 4.976366406540936e-06,
+        "mean_absolute_error": 4.7087669372558596e-07,
+        "mean_relative_error_at_1e-6_floor": 1.5409459497538859e-06,
+        "passed": true,
+        "reference_finite": true,
+        "rmse": 4.858784044967355e-07,
+        "worst_allowed_error": 4.184376329183578e-05,
+        "worst_candidate": 0.3947927951812744,
+        "worst_index": [
+          0,
+          0,
+          1
+        ],
+        "worst_reference": 0.3947921097278595
+      },
+      "pred_latent": {
+        "candidate_finite": true,
+        "cosine_similarity": 0.9999999999998971,
+        "count": 131072,
+        "fraction_within_tolerance": 1.0,
+        "max_absolute_error": 3.5762786865234375e-06,
+        "max_relative_error_at_1e-6_floor": 0.19384717168375787,
+        "mean_absolute_error": 3.8556163339809046e-07,
+        "mean_relative_error_at_1e-6_floor": 4.455661387838608e-06,
+        "passed": true,
+        "reference_finite": true,
+        "rmse": 5.041566578109663e-07,
+        "worst_allowed_error": 0.0001354913592338562,
+        "worst_candidate": -3.5163822174072266,
+        "worst_index": [
+          0,
+          3672,
+          7
+        ],
+        "worst_reference": -3.51637864112854
+      }
+    },
+    "metadata": {
+      "attention_query_chunk": 256,
+      "real_rope_modules": 28,
+      "static_position_dtype": "float32",
+      "static_position_sha256": "d98cae4539cf1cb0d89c1ed256b9442c68a955bf5bcc2f7de0bd4f677ad2bc9b",
+      "static_position_shape": [
+        1,
+        8192,
+        1024
+      ]
+    },
+    "passed": true
+  },
+  "contract": {
+    "inputs": {
+      "camera": [
+        1,
+        1,
+        5
+      ],
+      "feature1": [
+        1,
+        4101,
+        1280
+      ],
+      "feature2": [
+        1,
+        4101,
+        128
+      ],
+      "latent": [
+        1,
+        8192,
+        16
+      ],
+      "t": [
+        1
+      ]
+    },
+    "internal_precision": "fp32",
+    "outputs": {
+      "pred_camera": [
+        1,
+        1,
+        5
+      ],
+      "pred_latent": [
+        1,
+        8192,
+        16
+      ]
+    },
+    "public_dtype": "float32",
+    "timestep_semantics": "already scaled 1000 * normalized timestep"
+  },
+  "fixture_reference_comparison": null,
+  "inputs": {
+    "source": "deterministic synthetic inputs (seed=20260714)",
+    "summaries": {
+      "camera": {
+        "count": 5,
+        "l2_norm": 1.472560468196813,
+        "max": 0.6527721881866455,
+        "mean": -0.21825804114341735,
+        "min": -0.9867739081382751,
+        "std": 0.621329456870863
+      },
+      "feature1": {
+        "count": 5249280,
+        "l2_norm": 2291.728657185419,
+        "max": 5.227190971374512,
+        "mean": -0.00026312223078383146,
+        "min": -5.068299293518066,
+        "std": 1.000260942196999
+      },
+      "feature2": {
+        "count": 524928,
+        "l2_norm": 724.0301176401172,
+        "max": 4.928418159484863,
+        "mean": 0.0004281599323089276,
+        "min": -4.739129066467285,
+        "std": 0.9993249319917692
+      },
+      "latent": {
+        "count": 131072,
+        "l2_norm": 362.3905652758954,
+        "max": 4.217984199523926,
+        "mean": -8.182024848980493e-05,
+        "min": -4.327651500701904,
+        "std": 1.0009719737833631
+      },
+      "t": {
+        "count": 1,
+        "l2_norm": 1000.0,
+        "max": 1000.0,
+        "mean": 1000.0,
+        "min": 1000.0,
+        "std": 0.0
+      }
+    }
+  },
+  "measured_single_call_ms": {
+    "adapted_pytorch": 3649.549833033234,
+    "note": "Python validation measurements; not Chrome/Edge WebGPU benchmarks.",
+    "official_pytorch": 3052.5913749588653,
+    "onnxruntime_inference": 41493.99562506005,
+    "onnxruntime_session_load": 1910.036833025515
+  },
+  "onnxruntime_comparison_to_adapted_pytorch": {
+    "pred_camera": {
+      "candidate_finite": true,
+      "cosine_similarity": 0.9999999999993994,
+      "count": 5,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 2.3245811462402344e-06,
+      "max_relative_error_at_1e-6_floor": 5.88810427802481e-06,
+      "mean_absolute_error": 9.864568710327149e-07,
+      "mean_relative_error_at_1e-6_floor": 2.4804573134300393e-06,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 1.203382941710605e-06,
+      "worst_allowed_error": 0.002789585590362549,
+      "worst_candidate": 0.3947904706001282,
+      "worst_index": [
+        0,
+        0,
+        1
+      ],
+      "worst_reference": 0.3947927951812744
+    },
+    "pred_latent": {
+      "candidate_finite": true,
+      "cosine_similarity": 0.9999999999976728,
+      "count": 131072,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 1.430511474609375e-05,
+      "max_relative_error_at_1e-6_floor": 1.4070578580221584,
+      "mean_absolute_error": 2.085428440379289e-06,
+      "mean_relative_error_at_1e-6_floor": 2.865387269501697e-05,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 2.631665227521198e-06,
+      "worst_allowed_error": 0.009811351776123047,
+      "worst_candidate": 3.9056615829467773,
+      "worst_index": [
+        0,
+        4717,
+        9
+      ],
+      "worst_reference": 3.9056758880615234
+    }
+  },
+  "onnxruntime_comparison_to_untouched_official": {
+    "pred_camera": {
+      "candidate_finite": true,
+      "cosine_similarity": 0.9999999999996834,
+      "count": 5,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 1.6391277313232422e-06,
+      "max_relative_error_at_1e-6_floor": 4.15187560980673e-06,
+      "mean_absolute_error": 8.553266525268554e-07,
+      "mean_relative_error_at_1e-6_floor": 1.2767377840516083e-06,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 1.0379811327848097e-06,
+      "worst_allowed_error": 0.002789584219455719,
+      "worst_candidate": 0.3947904706001282,
+      "worst_index": [
+        0,
+        0,
+        1
+      ],
+      "worst_reference": 0.3947921097278595
+    },
+    "pred_latent": {
+      "candidate_finite": true,
+      "cosine_similarity": 0.9999999999976311,
+      "count": 131072,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 1.4781951904296875e-05,
+      "max_relative_error_at_1e-6_floor": 1.3281508435329143,
+      "mean_absolute_error": 2.103912725481827e-06,
+      "mean_relative_error_at_1e-6_floor": 2.7551012434450375e-05,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 2.654500545209647e-06,
+      "worst_allowed_error": 0.009811352729797364,
+      "worst_candidate": 3.9056615829467773,
+      "worst_index": [
+        0,
+        4717,
+        9
+      ],
+      "worst_reference": 3.9056763648986816
+    }
+  },
+  "output_summaries": {
+    "pred_camera": {
+      "adapted_pytorch": {
+        "count": 5,
+        "l2_norm": 2.368968105319486,
+        "max": 0.3947927951812744,
+        "mean": -0.7051860451698303,
+        "min": -1.5893640518188477,
+        "std": 0.7906419028244919
+      },
+      "official_pytorch": {
+        "count": 5,
+        "l2_norm": 2.3689687519766327,
+        "max": 0.3947921097278595,
+        "mean": -0.7051863729953766,
+        "min": -1.5893645286560059,
+        "std": 0.79064199794216
+      },
+      "onnxruntime": {
+        "count": 5,
+        "l2_norm": 2.3689673980903603,
+        "max": 0.3947904706001282,
+        "mean": -0.7051863223314285,
+        "min": -1.5893633365631104,
+        "std": 0.7906412318110388
+      }
+    },
+    "pred_latent": {
+      "adapted_pytorch": {
+        "count": 131072,
+        "l2_norm": 405.34176781392296,
+        "max": 5.0857744216918945,
+        "mean": 0.004773239305350563,
+        "min": -4.961991310119629,
+        "std": 1.1195988591166786
+      },
+      "official_pytorch": {
+        "count": 131072,
+        "l2_norm": 405.3417705186979,
+        "max": 5.085774898529053,
+        "mean": 0.004773251908499199,
+        "min": -4.961990833282471,
+        "std": 1.119598866533971
+      },
+      "onnxruntime": {
+        "count": 131072,
+        "l2_norm": 405.341389445006,
+        "max": 5.085772514343262,
+        "mean": 0.004773131226588845,
+        "min": -4.961987018585205,
+        "std": 1.1195978144615986
+      }
+    }
+  },
+  "passed": true,
+  "rope_primitive_gate": {
+    "atol": 3e-06,
+    "max_frequency_pair_error": 0.0,
+    "max_rotated_tensor_error": 2.384185791015625e-07,
+    "passed": true
+  },
+  "runtime": {
+    "external_data": [
+      "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/dit_step_fp32.onnx.data"
+    ],
+    "graph": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/dit_step_fp32.onnx",
+    "graph_internal_precision_metadata": "fp32",
+    "onnx": "1.22.0",
+    "onnxruntime": "1.27.0",
+    "ort_providers": [
+      "CPUExecutionProvider"
+    ],
+    "platform": "macOS-26.3-arm64-arm-64bit",
+    "python": "3.12.9",
+    "torch": "2.13.0",
+    "torch_device": "mps"
+  },
+  "saved_fixture": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/fixtures/generated/dit-step-fp32-compute/fixture.npz",
+  "source": {
+    "checkout": "/private/tmp/triposplat-official-root",
+    "commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "exported_commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "loader": "official triposplat.load_flow_model",
+    "repository": "https://github.com/VAST-AI-Research/TripoSplat",
+    "tracked_source_dirty": false
+  },
+  "tolerances": {
+    "adapter": {
+      "atol": 3e-05,
+      "rtol": 3e-05
+    },
+    "onnxruntime": {
+      "atol": 0.002,
+      "rtol": 0.002
+    }
+  }
+}

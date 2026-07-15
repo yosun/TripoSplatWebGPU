@@ -1,0 +1,64 @@
+{
+  "passed": false,
+  "component": "flow_dit_unconditional_projection_ab",
+  "purpose": "Test whether the browser-safe mixed Conv2D/token-zero output projection is the primary cause of the zero-conditioning drift by running the earlier ordinary-linear projection graph in a fresh CPU ONNX Runtime session.",
+  "source": {
+    "repository": "https://github.com/VAST-AI-Research/TripoSplat",
+    "commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "fixture": "public/fixtures/generated/flow4-fp32-trajectory/flow.json",
+    "invocation": 8,
+    "step": 4,
+    "pass": "unconditional",
+    "internal_precision": "fp32"
+  },
+  "graph": {
+    "path": "public/models/triposplat/dit_step_fp32.onnx",
+    "sha256": "2d3de962c7ca6698a147a3ce9ddd68f36e5d9931f5d4a05e37f5141b63a3aab0",
+    "bytes": 6447913,
+    "external_data": {
+      "path": "public/models/triposplat/dit_step_fp32.onnx.data",
+      "sha256": "90609cc2887db19ed582fe929d965c6362b42d58336cfb35c7d52d75d4fa7294",
+      "bytes": 1515655168
+    },
+    "scope": "Earlier diagnostic graph with an ordinary attention output linear projection. It lacks later WebGPU correctness workarounds and is not a deployment candidate."
+  },
+  "runtime": {
+    "provider": "CPUExecutionProvider",
+    "onnxruntime": "1.27.0",
+    "platform": "macOS 26.3 arm64",
+    "graph_optimization": "ORT_ENABLE_ALL",
+    "session_load_ms": 4891.385165974498,
+    "inference_ms": 70675.22424994968,
+    "note": "Python CPU diagnostic timings, not browser WebGPU performance."
+  },
+  "tolerance": {
+    "absolute": 0.0001,
+    "relative": 0.001
+  },
+  "outputs": {
+    "pred_latent": {
+      "passed": false,
+      "max_absolute_error": 0.0007450580596923828,
+      "mean_absolute_error": 0.00004303624154999852,
+      "rmse": 0.000056619960593730266,
+      "fraction_within_tolerance": 0.9983673095703125
+    },
+    "pred_camera": {
+      "passed": true,
+      "max_absolute_error": 0.00004082918167114258,
+      "mean_absolute_error": 0.000018465518223820254,
+      "rmse": 0.000022198053321842026,
+      "fraction_within_tolerance": 1.0
+    }
+  },
+  "comparison": {
+    "browser_safe_graph_cpu_pred_latent": {
+      "report": "docs/validation/2026-07-15-dit-step-flow4-invocation08-fp32-onnx-strict.json",
+      "max_absolute_error": 0.0007642507553100586,
+      "mean_absolute_error": 0.00004303711813902211,
+      "rmse": 0.0000566413873472652,
+      "fraction_within_tolerance": 0.9983291625976562
+    },
+    "conclusion": "The ordinary projection and browser-safe mixed projection have effectively identical mean and RMSE on this input. The special token-zero projection path is not the primary source of the unconditional drift."
+  }
+}

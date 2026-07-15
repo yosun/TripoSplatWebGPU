@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripoSplat WebGPU vanilla contract example</title>
+  </head>
+  <body>
+    <p><strong>Alpha example:</strong> use a prepared/alpha-bearing image unless a local background remover is configured.</p>
+    <input id="image" type="file" accept="image/*" />
+    <button id="generate" type="button">Generate</button>
+    <button id="cancel" type="button">Cancel</button>
+    <pre id="status">Not loaded</pre>
+
+    <!-- Map this path to a packed workspace package until a public release exists. -->
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

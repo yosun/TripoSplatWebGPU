@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripoSplat native ESM consumer smoke</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@ai3d/gaussian-scene": "./vendor/@ai3d/gaussian-scene/dist/index.js",
+          "@ai3d/triposplat-webgpu": "./vendor/@ai3d/triposplat-webgpu/dist/index.js",
+          "@ai3d/triposplat-webgpu/export": "./vendor/@ai3d/triposplat-webgpu/dist/export.js",
+          "@ai3d/triposplat-webgpu/low-level": "./vendor/@ai3d/triposplat-webgpu/dist/low-level.js",
+          "@ai3d/triposplat-webgpu/preprocess": "./vendor/@ai3d/triposplat-webgpu/dist/preprocess.js"
+        }
+      }
+    </script>
+  </head>
+  <body data-smoke="running">
+    <p id="status">Importing packed browser modules…</p>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

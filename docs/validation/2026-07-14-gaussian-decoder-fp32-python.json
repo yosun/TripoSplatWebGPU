@@ -1,0 +1,141 @@
+{
+  "artifacts": [
+    {
+      "bytes": 10821268,
+      "path": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/gaussian_decoder_fp32.onnx"
+    },
+    {
+      "bytes": 1083398016,
+      "path": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/gaussian_decoder_fp32.onnx.data"
+    }
+  ],
+  "comparison": {
+    "candidate_finite": true,
+    "cosine_similarity": 0.9999999997226996,
+    "count": 3932160,
+    "fraction_within_tolerance": 0.9986686706542969,
+    "max_absolute_error": 0.0067958831787109375,
+    "max_relative_error_at_1e-6_floor": 28.199516236782074,
+    "mean_absolute_error": 2.4836861192150765e-05,
+    "mean_relative_error_at_1e-6_floor": 0.00013962560731412737,
+    "p99_absolute_error": 0.00029540061950683594,
+    "p99_relative_error_at_1e-6_floor": 0.0010281213297802087,
+    "passed": false,
+    "reference_finite": true,
+    "rmse": 7.943951785726576e-05,
+    "worst_allowed_error": 0.009798152542114257,
+    "worst_candidate": -9.691356658935547,
+    "worst_index": [
+      0,
+      2231,
+      447
+    ],
+    "worst_reference": -9.698152542114258
+  },
+  "component": "gaussian_decoder",
+  "contract": {
+    "cond": {
+      "dtype": "float32",
+      "shape": [
+        1,
+        8192,
+        16
+      ]
+    },
+    "features": {
+      "dtype": "float32",
+      "shape": [
+        1,
+        8192,
+        480
+      ]
+    },
+    "gaussians_per_point": 32,
+    "internal_precision": "fp32",
+    "points": {
+      "dtype": "float32",
+      "range": [
+        0.0,
+        1.0
+      ],
+      "shape": [
+        1,
+        8192,
+        3
+      ]
+    }
+  },
+  "fixture_reference_comparison": null,
+  "graph_metadata": {
+    "triposplat.attention_modules": "32",
+    "triposplat.attention_output_modules": "32",
+    "triposplat.attention_query_chunk": "256",
+    "triposplat.checkpoint_filename": "triposplat_vae_decoder_fp16.safetensors",
+    "triposplat.component": "gaussian_decoder",
+    "triposplat.cond_input": "cond [1,8192,16] float32 sampled latent",
+    "triposplat.excluded_host_logic": "_get_offset, _build_gaussians, representation scales/biases/activations",
+    "triposplat.feature_layout": "official ElasticGaussianFixedlenDecoder layout; 32 Gaussians per point",
+    "triposplat.internal_precision": "fp32",
+    "triposplat.output": "features [1,8192,480] float32 raw decoder features",
+    "triposplat.points_input": "points [1,8192,3] float32 normalized coordinates [0,1]",
+    "triposplat.public_io_precision": "float32",
+    "triposplat.qk_norm_modules": "64",
+    "triposplat.qk_norm_padding_tokens": "1",
+    "triposplat.source_commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "triposplat.source_repository": "https://github.com/VAST-AI-Research/TripoSplat"
+  },
+  "inputs": {
+    "cond": {
+      "l2_norm": 362.20499251935644,
+      "max": 4.089606761932373,
+      "mean": 0.0007914417438743965,
+      "min": -4.367273807525635,
+      "std": 1.0004590869149173
+    },
+    "points": {
+      "l2_norm": 90.65594565851202,
+      "max": 0.999996542930603,
+      "mean": 0.5005696944475252,
+      "min": 4.6193599700927734e-05,
+      "std": 0.28955417758601115
+    },
+    "source": "deterministic synthetic inputs (seed=20260714)"
+  },
+  "measured_single_run_ms": {
+    "note": "Measured validation runs only; these are not browser WebGPU benchmarks.",
+    "onnxruntime_python": 20645.417957915924,
+    "pytorch": 1606.6722500836477
+  },
+  "outputs": {
+    "onnxruntime": {
+      "l2_norm": 6683.2381014462735,
+      "max": 21.3204288482666,
+      "mean": -1.3047743493455324,
+      "min": -17.25563621520996,
+      "std": 3.1075121182533265
+    },
+    "pytorch": {
+      "l2_norm": 6683.244867888148,
+      "max": 21.32042121887207,
+      "mean": -1.3047770289181915,
+      "min": -17.255640029907227,
+      "std": 3.1075146940260647
+    }
+  },
+  "passed": false,
+  "runtime": {
+    "onnx": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/gaussian_decoder_fp32.onnx",
+    "onnxruntime": "1.27.0",
+    "ort_providers": [
+      "CPUExecutionProvider"
+    ],
+    "platform": "macOS-26.3-arm64-arm-64bit",
+    "python": "3.12.9",
+    "torch": "2.13.0",
+    "torch_device": "mps"
+  },
+  "tolerance": {
+    "atol": 0.0001,
+    "rtol": 0.001
+  }
+}

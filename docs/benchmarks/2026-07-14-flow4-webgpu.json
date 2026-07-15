@@ -1,0 +1,61 @@
+{
+  "date": "2026-07-14",
+  "stage": "TripoSplat 4-step CFG/Euler flow loop",
+  "artifact": {
+    "graph": "public/models/triposplat/dit_step.onnx",
+    "graphSha256": "eeab762b44144bfa4acbebffaaf9897cff8488d2baa0bd2cf478c1cf964590ad",
+    "sidecarSha256": "620965b2bb52c00874e709a6e8f175d20ea42a28f5f47a908e69bbd93fd0698f",
+    "transferBytes": 886297272
+  },
+  "environment": {
+    "hardware": "Apple M3 Max, 128 GB unified memory",
+    "operatingSystem": "macOS 26.3 (25D125)",
+    "browser": "Chrome 150.0.0.0",
+    "executionProvider": "webgpu",
+    "crossOriginIsolated": false,
+    "wasmFallbackAllowed": false
+  },
+  "settings": {
+    "steps": 4,
+    "guidanceScale": 3.0,
+    "shift": 3.0,
+    "predictionArithmetic": "float16",
+    "conditionalInvocations": 4,
+    "unconditionalInvocations": 4
+  },
+  "timingsMs": {
+    "modelLoad": 11740.600000023842,
+    "summedInference": 107360.80000030994,
+    "summedReadback": 0.4999997615814209,
+    "samplingWall": 107436.80000007153,
+    "untouchedPyTorchMpsSampling": 20330.051166005433
+  },
+  "execution": {
+    "completed": true,
+    "webgpuInvocations": 8,
+    "fallbackUsed": false
+  },
+  "parityAgainstUntouchedPyTorch": {
+    "passed": false,
+    "tolerance": {
+      "absolute": 0.2,
+      "relative": 0.05,
+      "minimumCosineSimilarity": 0.9995
+    },
+    "latent": {
+      "maxAbsoluteError": 0.8848878145217896,
+      "meanAbsoluteError": 0.03234952976137606,
+      "rmse": 0.047362451459216616,
+      "cosineSimilarity": 0.9985283145158997,
+      "fractionWithinTolerance": 0.9969406127929688
+    },
+    "camera": {
+      "maxAbsoluteError": 0.0374755859375,
+      "meanAbsoluteError": 0.019338226318359374,
+      "rmse": 0.02379474428216362,
+      "cosineSimilarity": 0.9990385032013065,
+      "fractionWithinTolerance": 1.0
+    }
+  },
+  "scope": "The TypeScript loop completed correctly, but accumulated WebGPU-vs-PyTorch numerical drift remains outside the declared final-state gate. No 20-step parity or 16 GB compatibility claim is made."
+}

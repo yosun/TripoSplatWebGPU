@@ -1,0 +1,154 @@
+{
+  "artifacts": [
+    {
+      "bytes": 1460100,
+      "path": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/octree_occupancy_decoder_fp32.onnx"
+    },
+    {
+      "bytes": 219959296,
+      "path": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/octree_occupancy_decoder_fp32.onnx.data"
+    }
+  ],
+  "comparison": {
+    "candidate_finite": true,
+    "cosine_similarity": 0.9999999999266026,
+    "count": 65536,
+    "fraction_within_tolerance": 0.99993896484375,
+    "max_absolute_error": 0.0002902597188949585,
+    "max_relative_error_at_1e-6_floor": 1.41124342287455,
+    "mean_absolute_error": 1.868754472411638e-05,
+    "mean_relative_error_at_1e-6_floor": 9.667264035826315e-05,
+    "p99_absolute_error": 9.1552734375e-05,
+    "p99_relative_error_at_1e-6_floor": 0.0007152150805608648,
+    "passed": false,
+    "reference_finite": true,
+    "rmse": 2.6725726047310753e-05,
+    "worst_allowed_error": 0.00013988476097583771,
+    "worst_candidate": -0.040175020694732666,
+    "worst_index": [
+      0,
+      8026,
+      3
+    ],
+    "worst_reference": -0.03988476097583771
+  },
+  "component": "octree_occupancy_decoder",
+  "contract": {
+    "cond": {
+      "dtype": "float32",
+      "shape": [
+        1,
+        8192,
+        16
+      ]
+    },
+    "internal_precision": "fp32",
+    "l": {
+      "dtype": "float32",
+      "semantics": "current octree resolution: 2,4,...,256",
+      "shape": [
+        1
+      ]
+    },
+    "logits": {
+      "dtype": "float32",
+      "shape": [
+        1,
+        8192,
+        8
+      ]
+    },
+    "x": {
+      "dtype": "float32",
+      "range": [
+        0.0,
+        1.0
+      ],
+      "shape": [
+        1,
+        8192,
+        3
+      ]
+    }
+  },
+  "fixture_reference_comparison": null,
+  "graph_metadata": {
+    "triposplat.attention_modules": "4",
+    "triposplat.attention_output_modules": "4",
+    "triposplat.attention_query_chunk": "256",
+    "triposplat.checkpoint_filename": "triposplat_vae_decoder_fp16.safetensors",
+    "triposplat.component": "octree_occupancy_decoder",
+    "triposplat.cond_input": "cond [1,8192,16] float32 sampled latent",
+    "triposplat.excluded_host_logic": "softmax, systematic sampling, compaction, child expansion, random jitter",
+    "triposplat.internal_precision": "fp32",
+    "triposplat.l_input": "l [1] float32 current octree resolution in {2,4,...,256}",
+    "triposplat.output": "logits [1,8192,8] float32 raw child occupancy logits",
+    "triposplat.public_io_precision": "float32",
+    "triposplat.qk_norm_modules": "8",
+    "triposplat.qk_norm_padding_tokens": "1",
+    "triposplat.source_commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "triposplat.source_repository": "https://github.com/VAST-AI-Research/TripoSplat",
+    "triposplat.x_input": "x [1,8192,3] float32 normalized parent coordinates [0,1]"
+  },
+  "inputs": {
+    "cond": {
+      "l2_norm": 362.20499251935644,
+      "max": 4.089606761932373,
+      "mean": 0.0007914417438743965,
+      "min": -4.367273807525635,
+      "std": 1.0004590869149173
+    },
+    "l": {
+      "l2_norm": 256.0,
+      "max": 256.0,
+      "mean": 256.0,
+      "min": 256.0,
+      "std": 0.0
+    },
+    "source": "deterministic synthetic inputs (seed=20260714)",
+    "x": {
+      "l2_norm": 90.65594565851202,
+      "max": 0.999996542930603,
+      "mean": 0.5005696944475252,
+      "min": 4.6193599700927734e-05,
+      "std": 0.28955417758601115
+    }
+  },
+  "measured_single_run_ms": {
+    "note": "Measured validation runs only; these are not browser WebGPU benchmarks.",
+    "onnxruntime_python": 3286.89587500412,
+    "pytorch": 360.76529195997864
+  },
+  "outputs": {
+    "onnxruntime": {
+      "l2_norm": 549.2604623510499,
+      "max": 14.850628852844238,
+      "mean": 0.02134588162500961,
+      "min": -14.923161506652832,
+      "std": 2.1454424942493246
+    },
+    "pytorch": {
+      "l2_norm": 549.2620507981499,
+      "max": 14.850627899169922,
+      "mean": 0.02134587911524477,
+      "min": -14.923168182373047,
+      "std": 2.145448699452883
+    }
+  },
+  "passed": false,
+  "runtime": {
+    "onnx": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/octree_occupancy_decoder_fp32.onnx",
+    "onnxruntime": "1.27.0",
+    "ort_providers": [
+      "CPUExecutionProvider"
+    ],
+    "platform": "macOS-26.3-arm64-arm-64bit",
+    "python": "3.12.9",
+    "torch": "2.13.0",
+    "torch_device": "mps"
+  },
+  "tolerance": {
+    "atol": 0.0001,
+    "rtol": 0.001
+  }
+}

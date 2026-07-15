@@ -1,0 +1,104 @@
+{
+  "passed": false,
+  "component": "flow_dit_teacher_forced_trajectory_stable_rms_experiment",
+  "purpose": "Test the Core AI conversion note that explicit RMS normalization avoids an epsilon-clamp lowering error, without changing the canonical production manifest.",
+  "source": {
+    "repository": "https://github.com/VAST-AI-Research/TripoSplat",
+    "commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "fixture": "public/fixtures/generated/flow4-fp32-trajectory/flow.json",
+    "graph": "public/models/triposplat/dit_step_webgpu_fp32_stable_rms.onnx",
+    "graph_bytes": 10694886,
+    "graph_sha256": "bc76c80a82df110db9ed486639f9b9322a36e6155a0526b2df2674da5a456d30",
+    "external_data_bytes": 1633210368,
+    "external_data_sha256": "eacadf21577a976ce0a635cf8b1bbdb4b2c0cdb9cb55d4d73af87957c1e72023",
+    "internal_precision": "fp32",
+    "rms_norm_eps": 0.000001,
+    "stable_rms_modules": 56
+  },
+  "browser": {
+    "execution_provider": "webgpu",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "cross_origin_isolated": false,
+    "webgpu": true,
+    "model_load_ms": 13230,
+    "model_transfer_bytes": 1643905254,
+    "invocations": 8,
+    "inference_ms_sum": 95010.80000007153,
+    "readback_ms_sum": 0.8000000715255737,
+    "wall_ms": 95085.90000009537
+  },
+  "tolerance": {
+    "absolute": 0.0001,
+    "relative": 0.001,
+    "minimum_cosine_similarity": 0.99999999,
+    "requires_every_value_within_combined_tolerance": true
+  },
+  "records": [
+    {
+      "invocation": 1,
+      "step": 1,
+      "pass": "conditional",
+      "latent": { "passed": true, "max_absolute_error": 0.000008106231689453125, "mean_absolute_error": 0.000001140894536955095, "rmse": 0.0000014473434447631876, "cosine_similarity": 0.9999999999990925, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.0000019073486328125, "cosine_similarity": 0.999999999999698, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 2,
+      "step": 1,
+      "pass": "unconditional",
+      "latent": { "passed": true, "max_absolute_error": 0.00011587142944335938, "mean_absolute_error": 0.000017253800792982332, "rmse": 0.000021802044335642768, "cosine_similarity": 0.9999999998204234, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.00002968311309814453, "cosine_similarity": 0.9999999999073282, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 3,
+      "step": 2,
+      "pass": "conditional",
+      "latent": { "passed": true, "max_absolute_error": 0.00001823902130126953, "mean_absolute_error": 0.0000015465053826435593, "rmse": 0.0000020620336889442848, "cosine_similarity": 0.9999999999984719, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.000001430511474609375, "cosine_similarity": 0.9999999999995591, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 4,
+      "step": 2,
+      "pass": "unconditional",
+      "latent": { "passed": false, "max_absolute_error": 0.0003466606140136719, "mean_absolute_error": 0.000033214352375576794, "rmse": 0.00004343351181734036, "cosine_similarity": 0.9999999993569357, "fraction_within_tolerance": 0.9994583129882812 },
+      "camera": { "passed": true, "max_absolute_error": 0.00001691281795501709, "cosine_similarity": 0.9999999999516299, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 5,
+      "step": 3,
+      "pass": "conditional",
+      "latent": { "passed": true, "max_absolute_error": 0.000012040138244628906, "mean_absolute_error": 0.00000131805781511396, "rmse": 0.0000017004677439423223, "cosine_similarity": 0.9999999999989385, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.0000015497207641601562, "cosine_similarity": 0.9999999999995652, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 6,
+      "step": 3,
+      "pass": "unconditional",
+      "latent": { "passed": false, "max_absolute_error": 0.0004761219024658203, "mean_absolute_error": 0.00003767401792975633, "rmse": 0.00004918003783445559, "cosine_similarity": 0.9999999991893581, "fraction_within_tolerance": 0.9990692138671875 },
+      "camera": { "passed": true, "max_absolute_error": 0.00002002716064453125, "cosine_similarity": 0.9999999999120077, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 7,
+      "step": 4,
+      "pass": "conditional",
+      "latent": { "passed": true, "max_absolute_error": 0.00004902482032775879, "mean_absolute_error": 0.000001925019278314899, "rmse": 0.0000025305399585265386, "cosine_similarity": 0.99999999999749, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.0000021457672119140625, "cosine_similarity": 0.999999999999605, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 8,
+      "step": 4,
+      "pass": "unconditional",
+      "latent": { "passed": false, "max_absolute_error": 0.0008275832515209913, "mean_absolute_error": 0.00005401271265825791, "rmse": 0.00007094360470628558, "cosine_similarity": 0.9999999980891563, "fraction_within_tolerance": 0.9957809448242188 },
+      "camera": { "passed": true, "max_absolute_error": 0.00004547834396362305, "cosine_similarity": 0.9999999998403876, "fraction_within_tolerance": 1 }
+    }
+  ],
+  "comparison_with_canonical_graph": {
+    "step_2_unconditional_max_absolute_error": { "canonical": 0.00033092498779296875, "stable_rms": 0.0003466606140136719 },
+    "step_3_unconditional_max_absolute_error": { "canonical": 0.0004725456237792969, "stable_rms": 0.0004761219024658203 },
+    "step_4_unconditional_max_absolute_error": { "canonical": 0.0008442432153970003, "stable_rms": 0.0008275832515209913 }
+  },
+  "observations": [
+    "The experimental graph passes its Python three-way validation but still fails the browser teacher-forced trajectory at the same unconditional invocations as the canonical graph.",
+    "Explicit RMS normalization does not materially improve the trajectory: steps 2 and 3 are marginally worse and step 4 is only slightly better.",
+    "The graph remains an unpromoted diagnostic artifact; the production manifest is unchanged."
+  ]
+}

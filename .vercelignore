@@ -1,2 +1,5 @@
 public/models/*.onnx
 public/models/*.onnx.data
+public/models/**/*.onnx
+public/models/**/*.onnx.data
+public/fixtures/generated/

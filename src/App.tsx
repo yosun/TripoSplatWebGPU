@@ -6,10 +6,10 @@ import { AholoSplatPreview } from './components/AholoSplatPreview'
 import { SplatPreview, type CameraSnapshot } from './components/SplatPreview'
 import { estimateFocalLengthFromFile, type FocalEstimate } from './lib/focal'
 import { EMBED_SNIPPET } from './lib/embed'
-import { imageFileToSharpTensor, readImageInfo } from './lib/image'
+import { decodeImageBitmap, readImageInfo } from './lib/image'
 import { readSharpViewerMeta, writeSharpViewerMeta, type SharpViewerMeta } from '@ml-sharp-web/ply-metadata'
 import { DEFAULT_MAX_GAUSSIANS, DEFAULT_OPACITY_THRESHOLD, DEFAULT_WEB_MODEL_URL } from './lib/sharpConstants'
-import { SharpWorkerClient } from './lib/sharpWorkerClient'
+import { SharpWebGPUModel } from './models/sharp/SharpWebGPUModel'
 import type { WorkerStatusMessage } from './workers/messages'
 
 const DEFAULT_BG_COLOR = '#101014'
@@ -69,7 +69,7 @@ function toOutputName(fileName: string): string {
 }
 
 function App() {
-  const workerRef = useRef<SharpWorkerClient | null>(null)
+  const sharpModelRef = useRef<SharpWebGPUModel | null>(null)
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const modelInputRef = useRef<HTMLInputElement | null>(null)
   const actionsRef = useRef<Record<string, () => void>>({})
@@ -170,16 +170,10 @@ function App() {
   const focalPx = controls.values.image.focal
 
   useEffect(() => {
-    const worker = new SharpWorkerClient((message) => {
-      setWorkerStage(message.stage)
-      setStatusText(message.message)
-      setWorkerProgress(message.progress)
-    })
-    workerRef.current = worker
-
     return () => {
-      workerRef.current = null
-      worker.dispose()
+      const model = sharpModelRef.current
+      sharpModelRef.current = null
+      if (model) void model.dispose()
     }
   }, [])
 
@@ -217,6 +211,9 @@ function App() {
 
   useEffect(() => {
     if (loadedModelUrlRef.current && loadedModelUrlRef.current !== effectiveModelUrl) {
+      const model = sharpModelRef.current
+      sharpModelRef.current = null
+      if (model) void model.dispose()
       loadedModelUrlRef.current = null
       setModelLoadState('idle')
       setStatusText('Model URL changed — load the model again to proceed.')
@@ -254,13 +251,26 @@ function App() {
   }, [])
 
   const handleLoadModel = async () => {
-    if (!workerRef.current || !effectiveModelUrl || modelLoadState === 'loading') return
+    if (!effectiveModelUrl || modelLoadState === 'loading') return
     setModelLoadState('loading')
     setErrorText(null)
     setStatusText('Starting model download…')
     setWorkerStage('loading-model')
     try {
-      await workerRef.current.loadModel({ modelUrl: effectiveModelUrl })
+      let model = sharpModelRef.current
+      if (!model || model.modelUrl !== effectiveModelUrl) {
+        if (model) await model.dispose()
+        model = new SharpWebGPUModel({
+          modelUrl: effectiveModelUrl,
+          onStatus: (message) => {
+            setWorkerStage(message.stage)
+            setStatusText(message.message)
+            setWorkerProgress(message.progress)
+          },
+        })
+        sharpModelRef.current = model
+      }
+      await model.load()
       loadedModelUrlRef.current = effectiveModelUrl
       setModelLoadState('loaded')
       setStatusText('Model loaded. Upload an image and generate.')
@@ -280,7 +290,9 @@ function App() {
         ? 'Cancel the model load? The current download will be aborted.'
         : 'Reset the model? This will clear the loaded session and any uploaded file.'
     if (!window.confirm(message)) return
-    workerRef.current?.reset()
+    const model = sharpModelRef.current
+    sharpModelRef.current = null
+    if (model) void model.dispose()
     setModelFile(null)
     loadedModelUrlRef.current = null
     setModelLoadState('idle')
@@ -346,7 +358,7 @@ function App() {
       setErrorText('Upload an image before generating.')
       return
     }
-    if (!workerRef.current || !effectiveModelUrl) {
+    if (!effectiveModelUrl) {
       setErrorText('No in-browser model source is available. Upload an ONNX predictor or load the hosted model.')
       return
     }
@@ -365,21 +377,25 @@ function App() {
     const startTime = performance.now()
 
     try {
-      const { tensor, width, height } = await imageFileToSharpTensor(image.file)
+      const bitmap = await decodeImageBitmap(image.file)
+      const model = sharpModelRef.current
+      if (!model || model.modelUrl !== effectiveModelUrl) {
+        bitmap.close()
+        throw new Error('The loaded SHARP session no longer matches the selected model. Load it again.')
+      }
+      const scene = await (async () => {
+        try {
+          return await model.generate(bitmap, {
+            focalPx: focal,
+            opacityThreshold: controls.values.generation.opacity,
+            maxGaussians: controls.values.generation.maxGaussians,
+          })
+        } finally {
+          bitmap.close()
+        }
+      })()
 
-      await workerRef.current.loadModel({ modelUrl: effectiveModelUrl })
-      const inference = await workerRef.current.runInference({
-        modelUrl: effectiveModelUrl,
-        imageTensor: tensor.buffer,
-        imageWidth: width,
-        imageHeight: height,
-        focalPx: focal,
-        disparityFactor: focal / width,
-        opacityThreshold: controls.values.generation.opacity,
-        maxGaussians: controls.values.generation.maxGaussians,
-      })
-
-      const bytes = new Uint8Array(inference.plyBuffer as ArrayBuffer)
+      const bytes = scene.ply
       const blob = new Blob([bytes as BlobPart], { type: 'application/octet-stream' })
       const plyUrl = URL.createObjectURL(blob)
       const elapsedMs = performance.now() - startTime
@@ -410,9 +426,9 @@ function App() {
           return {
             previewPlyUrl: plyUrl,
             downloadPlyUrl: plyUrl,
-            downloadName: inference.outputName ?? toOutputName(image.file.name),
-            selectedGaussians: inference.selectedGaussians,
-            totalGaussians: inference.totalGaussians,
+            downloadName: toOutputName(image.file.name),
+            selectedGaussians: scene.count,
+            totalGaussians: scene.totalCount,
             fileSizeBytes: blob.size,
           }
         })

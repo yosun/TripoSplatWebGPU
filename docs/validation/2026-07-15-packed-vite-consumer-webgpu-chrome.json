@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "component": "packed_vite_consumer_webgpu_smoke",
+  "scope": {
+    "validated": [
+      "installation from packed @ai3d/gaussian-scene and @ai3d/triposplat-webgpu tarballs",
+      "Vite production build",
+      "TripoSplat module worker asset resolution",
+      "ONNX Runtime ESM WASM wrapper and WASM binary resolution",
+      "tiny identity ONNX graph execution through the WebGPU execution provider"
+    ],
+    "not_validated": [
+      "full TripoSplat inference"
+    ]
+  },
+  "consumer": {
+    "retained_path": "/var/folders/hn/mbd2m4gj64qdpz_wkfch5gj00000gp/T/triposplat-vite-consumer-ipBReS"
+  },
+  "packed_tarballs": {
+    "@ai3d/gaussian-scene": {
+      "byte_length": 14271,
+      "sha256": "7ad700468ad6470d8c71339a0bc55f7a98e62c6b768048f5a0f267988180e67c"
+    },
+    "@ai3d/triposplat-webgpu": {
+      "byte_length": 6122350,
+      "sha256": "18062d256623c7f90916b08c77bbe2713504734f8ea24a771eb2c956afe1983d"
+    }
+  },
+  "vite_build_assets": {
+    "index": { "byte_length": 214 },
+    "esm_wasm_wrapper": { "byte_length": 47507 },
+    "javascript": { "byte_length": 79995 },
+    "worker": { "byte_length": 102349 },
+    "wasm": { "byte_length": 24254953 }
+  },
+  "browser": {
+    "name": "Chrome",
+    "version": "150",
+    "execution_provider": "webgpu",
+    "gpu": "Apple M3 Max"
+  },
+  "result": {
+    "provider": "webgpu",
+    "values": [1, 2, 3, 4]
+  }
+}

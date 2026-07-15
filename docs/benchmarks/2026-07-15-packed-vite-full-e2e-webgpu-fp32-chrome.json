@@ -1,0 +1,105 @@
+{
+  "passed": true,
+  "completed": true,
+  "component": "packed_vite_consumer_full_triposplat_e2e",
+  "qualification_scope": "clean-tarball-install-five-stage-execution-structure-and-export-sanity",
+  "numerical_parity_claimed": false,
+  "package": {
+    "name": "@ai3d/triposplat-webgpu",
+    "version": "0.1.0-alpha.0",
+    "tarball_sha256": "a2ba5ce623c7b6a9d86225742789ef2e7f93e9b8aeec95bc44bcb0725cb21859",
+    "tarball_bytes": 6128163,
+    "gaussian_scene_tarball_sha256": "7ad700468ad6470d8c71339a0bc55f7a98e62c6b768048f5a0f267988180e67c",
+    "gaussian_scene_tarball_bytes": 14271,
+    "install": "Fresh temporary Vite consumer installed both packed tarballs with npm --ignore-scripts and no workspace dependency links.",
+    "consumer_source": "tests/consumers/vite/src/main.ts?full=1"
+  },
+  "built_consumer": {
+    "entry": {
+      "file": "assets/index-DJIrqbAo.js",
+      "bytes": 86663,
+      "sha256": "598745aa896cb317defcd9588c97fd0736f17afb9cf90b6b168b2701fa4b3fa8"
+    },
+    "worker": {
+      "file": "assets/worker-CRqY2mF-.js",
+      "bytes": 104227,
+      "sha256": "9c29c2af76158b6225a1c1ed081ed5720a8ad49161a8818f83b175d3391ee7f0"
+    },
+    "ort_wasm": {
+      "file": "assets/ort-wasm-simd-threaded.asyncify-CvvOzbbq.wasm",
+      "bytes": 24254953,
+      "sha256": "7e83cd6cee77e478bc96a7e91b198144fb5e4126287daf1f9b54bb195ebcd55a"
+    },
+    "ort_wasm_wrapper": {
+      "file": "assets/ort-wasm-simd-threaded.asyncify-BUv3uAQk.mjs",
+      "bytes": 47507,
+      "sha256": "7236653b8565da4046e459cd0e274123419a1d9f1f8f18fd36c28058346ca655"
+    }
+  },
+  "source": {
+    "repository": "https://github.com/VAST-AI-Research/TripoSplat",
+    "commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "manifest_url": "http://127.0.0.1:5173/models/triposplat/manifest.json",
+    "manifest_version": "0.1.0-fp32.20260715",
+    "declared_model_bytes": 6465182402,
+    "precision": "fp32",
+    "graphs": ["dino", "vae", "dit", "octree", "gaussianDecoder"]
+  },
+  "configuration": {
+    "consumer_origin": "http://127.0.0.1:5183",
+    "model_origin": "http://127.0.0.1:5173",
+    "model_delivery": "Direct cross-origin static HTTP requests with CORS; no application proxy and no image upload.",
+    "cache": "none",
+    "artifact_behavior": "Verified temporary OPFS staging by stage; this run did not reuse the package's persistent model cache.",
+    "prepared_image": "fixtures/generated/dinov3-fp32/prepared.png",
+    "vae_noise": "fixtures/generated/flux2-vae-fp32/epsilon.f32",
+    "latent_noise": "fixtures/generated/flow4-fp32-compute/latent.f32",
+    "camera_noise": "fixtures/generated/flow4-fp32-compute/camera.f32",
+    "steps": 4,
+    "guidance_scale": 3,
+    "shift": 3,
+    "seed": 42,
+    "input_is_prepared": true
+  },
+  "environment": {
+    "hardware": "Apple M3 Max",
+    "unified_memory_gb": 128,
+    "operating_system": "macOS 26.3 (25D125)",
+    "browser": "Chrome 150.0.0.0",
+    "execution_provider": "webgpu",
+    "onnx_runtime_web": "1.27.0",
+    "cross_origin_isolated": false,
+    "wasm_fallback": false
+  },
+  "timings_ms": {
+    "fixture_fetch": 6.899999976158142,
+    "manifest_and_runtime_load": 3.399999976158142,
+    "generate_including_artifact_staging": 209712.20000004768,
+    "exports": 410,
+    "total": 210158.69999992847,
+    "through_gaussian_inference": 209663.39999997616,
+    "neural_inference": {
+      "dinov3": 4285.199999928474,
+      "flux_vae": 1756.5,
+      "dit_8_calls": 111538.2999998331,
+      "dit_readback": 1.100000023841858,
+      "octree_8_calls": 6455.000000119209,
+      "gaussian_decoder": 6111.200000047684
+    }
+  },
+  "result": {
+    "count": 262144,
+    "all_required_arrays_finite": true,
+    "ply_bytes": 17826208,
+    "splat_bytes": 8388608,
+    "scene_disposed": true,
+    "model_disposed": true
+  },
+  "observations": [
+    "This run used the exact final packed tarball recorded above, installed into a fresh Vite project. The emitted package worker and ONNX Runtime assets were used; there was no workspace workerFactory or source import.",
+    "The same final packed build first passed a tiny identity graph with the WebGPU provider, then completed this full five-graph run after a page navigation created a fresh model/runtime.",
+    "The model origin was a loopback static development server, so the timing is not a public-CDN download benchmark and may benefit from operating-system file caching. It is an actual measured result, not an estimate.",
+    "The gate checks complete installed-package execution, finite scene arrays, and exact structural export sizes. It does not compare the complete scene or rendered pixels with official PyTorch and therefore is not an end-to-end numerical or visual parity pass.",
+    "No peak JavaScript, worker, WebGPU, driver, or unified-memory figure is claimed."
+  ]
+}

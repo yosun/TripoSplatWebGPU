@@ -17,7 +17,9 @@ import type {
 const workerScope = self as DedicatedWorkerGlobalScope
 const sessionCache = new Map<string, Promise<ort.InferenceSession>>()
 
-ort.env.wasm.numThreads = Math.max(1, Math.min(4, self.navigator.hardwareConcurrency || 2))
+ort.env.wasm.numThreads = self.crossOriginIsolated
+  ? Math.max(1, Math.min(4, self.navigator.hardwareConcurrency || 2))
+  : 1
 ort.env.wasm.simd = true
 const ortBaseUrl = new URL(`${import.meta.env.BASE_URL}ort/`, self.location.origin).href
 ort.env.wasm.wasmPaths = {

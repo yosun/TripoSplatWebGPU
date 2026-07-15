@@ -1,0 +1,41 @@
+{
+  "date": "2026-07-14",
+  "stage": "TripoSplat octree occupancy invocation",
+  "artifact": {
+    "graph": "public/models/triposplat/octree_occupancy_decoder_fp32.onnx",
+    "graphSha256": "8eeb2482d06be411f363df240a9426c5ddca3a5f17d2ddef4a7e4c7533e0b3b3",
+    "sidecarSha256": "88e2a1820b456a0601d9dc705748ccab607af1a4fc034a2bc000e36e04c3170a",
+    "transferBytes": 221419396,
+    "internalPrecision": "fp32"
+  },
+  "environment": {
+    "hardware": "Apple M3 Max, 128 GB unified memory",
+    "operatingSystem": "macOS 26.3 (25D125)",
+    "browser": "Chrome 150.0.0.0",
+    "executionProvider": "webgpu",
+    "crossOriginIsolated": false,
+    "wasmFallbackAllowed": false
+  },
+  "timingsMs": {
+    "modelLoad": 1244.5,
+    "inference": 920.4000000953674,
+    "readback": 0.09999990463256836
+  },
+  "parityAgainstOfficialFp32PyTorch": {
+    "passed": true,
+    "tolerance": {
+      "absolute": 0.005,
+      "relative": 0.01,
+      "minimumCosineSimilarity": 0.99999
+    },
+    "logits": {
+      "count": 65536,
+      "maxAbsoluteError": 0.000224381685256958,
+      "meanAbsoluteError": 0.000011271658447054023,
+      "rmse": 0.000016672365298045033,
+      "cosineSimilarity": 0.999999999969779,
+      "fractionWithinTolerance": 1.0
+    }
+  },
+  "scope": "One measured cold worker/session load and one fixed-length occupancy invocation on this machine only. The fp16 export failed its Python parity gate; this selective-fp32 result is not a complete octree loop or a 16 GB compatibility result."
+}

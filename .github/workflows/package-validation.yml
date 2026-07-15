@@ -1,0 +1,107 @@
+name: Package validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up pinned pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build framework-neutral packages
+        run: pnpm -r --if-present build
+
+      - name: Typecheck root application
+        run: pnpm typecheck
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Lint source
+        run: pnpm lint
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Check whitespace and conflict markers
+        run: |
+          git diff --check
+          if git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- ':!pnpm-lock.yaml'; then
+            echo 'Merge conflict marker found.' >&2
+            exit 1
+          fi
+
+      - name: Pack public workspace packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          pack_dir="$RUNNER_TEMP/packs"
+          mkdir -p "$pack_dir"
+
+          for manifest in packages/*/package.json; do
+            name="$(node -p "require('./$manifest').name")"
+            private="$(node -p "Boolean(require('./$manifest').private)")"
+            if [[ "$private" == "true" ]]; then
+              continue
+            fi
+            pnpm --filter "$name" pack --pack-destination "$pack_dir"
+          done
+
+          find "$pack_dir" -type f -name '*.tgz' -print -exec tar -tzf {} \;
+
+      - name: Reject model and fixture payloads in npm tarballs
+        shell: bash
+        run: |
+          set -euo pipefail
+          pack_dir="$RUNNER_TEMP/packs"
+          for archive in "$pack_dir"/*.tgz; do
+            size="$(stat --format='%s' "$archive")"
+            echo "$(basename "$archive"): $size compressed bytes"
+            if (( size > 52428800 )); then
+              echo "Package exceeds the 50 MiB compressed safety ceiling: $archive" >&2
+              exit 1
+            fi
+            if tar -tzf "$archive" | grep -E '(^|/)(models|fixtures|benchmarks)(/|$)|\.(onnx|onnx\.data|safetensors|ckpt|npz|f32)$'; then
+              echo "Forbidden model or fixture payload found in $archive" >&2
+              exit 1
+            fi
+          done
+
+      - name: Validate packed Vite, Next-client, and native ESM consumers
+        run: pnpm test:package-consumer
+
+      - name: Upload package tarballs
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarballs
+          path: ${{ runner.temp }}/packs/*.tgz
+          if-no-files-found: error
+          retention-days: 7

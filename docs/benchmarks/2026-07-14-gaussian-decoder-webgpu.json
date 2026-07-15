@@ -1,0 +1,41 @@
+{
+  "date": "2026-07-14",
+  "stage": "TripoSplat Gaussian feature decoder invocation",
+  "artifact": {
+    "graph": "public/models/triposplat/gaussian_decoder_fp32.onnx",
+    "graphSha256": "41f8471e974a764e6855c3d12cdfbe0d3f21769505bfb7182c433aa6cd923541",
+    "sidecarSha256": "7520801efc2b204076842d64f09c2490d7009476ffa14871c3efb8876bab1d94",
+    "transferBytes": 1094219284,
+    "internalPrecision": "fp32"
+  },
+  "environment": {
+    "hardware": "Apple M3 Max, 128 GB unified memory",
+    "operatingSystem": "macOS 26.3 (25D125)",
+    "browser": "Chrome 150.0.0.0",
+    "executionProvider": "webgpu",
+    "crossOriginIsolated": false,
+    "wasmFallbackAllowed": false
+  },
+  "timingsMs": {
+    "modelLoad": 7929.600000023842,
+    "inference": 5370.599999904633,
+    "readback": 1.3000000715255737
+  },
+  "parityAgainstOfficialFp32PyTorch": {
+    "passed": true,
+    "tolerance": {
+      "absolute": 0.02,
+      "relative": 0.01,
+      "minimumCosineSimilarity": 0.9999
+    },
+    "features": {
+      "count": 3932160,
+      "maxAbsoluteError": 0.003276824951171875,
+      "meanAbsoluteError": 0.000008386885390874548,
+      "rmse": 0.000027998491936931344,
+      "cosineSimilarity": 0.9999999999651633,
+      "fractionWithinTolerance": 1.0
+    }
+  },
+  "scope": "One measured cold worker/session load and one fixed-length raw 480-feature decoder invocation on this machine only. This does not validate final Gaussian activation/packing, a rendered scene, or 16 GB compatibility."
+}

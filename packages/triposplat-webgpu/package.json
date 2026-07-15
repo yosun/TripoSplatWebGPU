@@ -1,0 +1,58 @@
+{
+  "name": "@ai3d/triposplat-webgpu",
+  "version": "0.1.0-alpha.0",
+  "description": "Framework-neutral browser WebGPU runtime and numerical building blocks for TripoSplat.",
+  "type": "module",
+  "sideEffects": false,
+  "license": "UNLICENSED",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./export": {
+      "types": "./dist/export.d.ts",
+      "import": "./dist/export.js"
+    },
+    "./low-level": {
+      "types": "./dist/low-level.d.ts",
+      "import": "./dist/low-level.js"
+    },
+    "./preprocess": {
+      "types": "./dist/preprocess.d.ts",
+      "import": "./dist/preprocess.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc -p tsconfig.json && vite build --config vite.config.ts && node scripts/copy-assets.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@ai3d/gaussian-scene": "workspace:*",
+    "onnxruntime-web": "1.27.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "triposplat",
+    "webgpu",
+    "onnx",
+    "3d-gaussian-splatting",
+    "browser"
+  ]
+}

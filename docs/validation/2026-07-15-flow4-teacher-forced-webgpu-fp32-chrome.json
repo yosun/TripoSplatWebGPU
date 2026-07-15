@@ -1,0 +1,95 @@
+{
+  "passed": false,
+  "component": "flow_dit_teacher_forced_trajectory",
+  "purpose": "Separate one-call WebGPU graph error from autoregressive Euler accumulation by feeding every official PyTorch invocation state directly to the browser graph.",
+  "source": {
+    "repository": "https://github.com/VAST-AI-Research/TripoSplat",
+    "commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "fixture": "public/fixtures/generated/flow4-fp32-trajectory/flow.json",
+    "internal_precision": "fp32",
+    "official_pytorch_device": "mps",
+    "official_pytorch_sampling_ms": 24109.636332956143
+  },
+  "browser": {
+    "execution_provider": "webgpu",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "cross_origin_isolated": false,
+    "webgpu": true,
+    "model_load_ms": 12231.800000071526,
+    "model_transfer_bytes": 1643895982,
+    "invocations": 8,
+    "inference_ms_sum": 107931.49999988079,
+    "readback_ms_sum": 0.7000001668930054,
+    "wall_ms": 108012.60000002384
+  },
+  "tolerance": {
+    "absolute": 0.0001,
+    "relative": 0.001,
+    "minimum_cosine_similarity": 0.99999999,
+    "requires_every_value_within_combined_tolerance": true
+  },
+  "records": [
+    {
+      "invocation": 1,
+      "step": 1,
+      "pass": "conditional",
+      "latent": { "passed": true, "max_absolute_error": 0.0000057220458984375, "mean_absolute_error": 7.505832886334218e-7, "rmse": 9.604607583182372e-7, "cosine_similarity": 0.9999999999995586, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.0000017881393432617188, "cosine_similarity": 0.9999999999996828, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 2,
+      "step": 1,
+      "pass": "unconditional",
+      "latent": { "passed": true, "max_absolute_error": 0.00011479854583740234, "mean_absolute_error": 0.000017221457375260485, "rmse": 0.000021770853513950268, "cosine_similarity": 0.9999999998209437, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.000030159950256347656, "cosine_similarity": 0.9999999999156103, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 3,
+      "step": 2,
+      "pass": "conditional",
+      "latent": { "passed": true, "max_absolute_error": 0.000011205673217773438, "mean_absolute_error": 0.0000011912794382062941, "rmse": 0.0000015485293539862595, "cosine_similarity": 0.9999999999990931, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.0000022649765014648438, "cosine_similarity": 0.9999999999988068, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 4,
+      "step": 2,
+      "pass": "unconditional",
+      "latent": { "passed": false, "max_absolute_error": 0.00033092498779296875, "mean_absolute_error": 0.000033490709278716224, "rmse": 0.00004371240280602536, "cosine_similarity": 0.9999999993485882, "fraction_within_tolerance": 0.999481201171875 },
+      "camera": { "passed": true, "max_absolute_error": 0.000013887882232666016, "cosine_similarity": 0.9999999999492369, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 5,
+      "step": 3,
+      "pass": "conditional",
+      "latent": { "passed": true, "max_absolute_error": 0.000012934207916259766, "mean_absolute_error": 0.0000012839105951734098, "rmse": 0.000001654513048717227, "cosine_similarity": 0.9999999999989845, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.0000011920928955078125, "cosine_similarity": 0.9999999999998503, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 6,
+      "step": 3,
+      "pass": "unconditional",
+      "latent": { "passed": false, "max_absolute_error": 0.0004725456237792969, "mean_absolute_error": 0.00003763293265124368, "rmse": 0.00004909626825313548, "cosine_similarity": 0.9999999991921185, "fraction_within_tolerance": 0.9990692138671875 },
+      "camera": { "passed": true, "max_absolute_error": 0.00002384185791015625, "cosine_similarity": 0.999999999906423, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 7,
+      "step": 4,
+      "pass": "conditional",
+      "latent": { "passed": true, "max_absolute_error": 0.000047326087951660156, "mean_absolute_error": 0.0000017943525010277739, "rmse": 0.0000023755500407035542, "cosine_similarity": 0.9999999999978236, "fraction_within_tolerance": 1 },
+      "camera": { "passed": true, "max_absolute_error": 0.0000016987323760986328, "cosine_similarity": 0.9999999999995395, "fraction_within_tolerance": 1 }
+    },
+    {
+      "invocation": 8,
+      "step": 4,
+      "pass": "unconditional",
+      "latent": { "passed": false, "max_absolute_error": 0.0008442432153970003, "mean_absolute_error": 0.00005393462735536758, "rmse": 0.00007077044059907788, "cosine_similarity": 0.9999999980984955, "fraction_within_tolerance": 0.9958419799804688 },
+      "camera": { "passed": true, "max_absolute_error": 0.000047087669372558594, "cosine_similarity": 0.9999999998031458, "fraction_within_tolerance": 1 }
+    }
+  ],
+  "observations": [
+    "Every conditional invocation passed the strict gate.",
+    "The unconditional invocation passed at step 1, then failed at steps 2 through 4 with increasing latent error.",
+    "Every camera output passed.",
+    "This localizes the current strict-flow failure to invocation-dependent graph behavior, especially the zero-conditioning CFG branch; it is not only Euler-state accumulation."
+  ]
+}

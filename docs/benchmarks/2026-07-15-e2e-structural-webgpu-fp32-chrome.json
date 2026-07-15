@@ -1,0 +1,105 @@
+{
+  "passed": true,
+  "completed": true,
+  "component": "packaged_browser_local_triposplat_e2e",
+  "qualification_scope": "end-to-end-execution-structure-and-export-sanity",
+  "numerical_parity_claimed": false,
+  "source": {
+    "repository": "https://github.com/VAST-AI-Research/TripoSplat",
+    "commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "package": "@ai3d/triposplat-webgpu",
+    "manifest": "public/models/triposplat/manifest.json",
+    "manifest_version": "0.1.0-fp32.20260715",
+    "declared_model_bytes": 6465182402,
+    "precision": "fp32",
+    "graphs": ["dino", "vae", "dit", "octree", "gaussianDecoder"]
+  },
+  "configuration": {
+    "cache": "none",
+    "artifact_behavior": "Each graph and external-data object was streamed into temporary OPFS, byte-length and SHA-256 verified, loaded, and released before the next model stage.",
+    "prepared_image": "public/fixtures/generated/dinov3-fp32/prepared.png",
+    "vae_noise": "public/fixtures/generated/flux2-vae-fp32/epsilon.f32",
+    "latent_noise": "public/fixtures/generated/flow4-fp32-compute/latent.f32",
+    "camera_noise": "public/fixtures/generated/flow4-fp32-compute/camera.f32",
+    "steps": 4,
+    "guidance_scale": 3,
+    "shift": 3,
+    "seed": 42,
+    "input_is_prepared": true
+  },
+  "environment": {
+    "hardware": "Apple M3 Max",
+    "unified_memory_gb": 128,
+    "operating_system": "macOS 26.3 (25D125)",
+    "browser": "Chrome 150.0.0.0",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "execution_provider": "webgpu",
+    "onnx_runtime_web": "1.27.0",
+    "cross_origin_isolated": false,
+    "wasm_fallback": false
+  },
+  "timings_ms": {
+    "fixture_fetch": 9.200000047683716,
+    "manifest_compatibility_runtime_load": 14.199999928474426,
+    "generate_including_artifact_staging": 240470.60000002384,
+    "through_gaussian_inference": 240422,
+    "ply_export_and_sha256": 227.80000007152557,
+    "splat_export_and_sha256": 213.10000002384186,
+    "total": 240964.19999992847,
+    "neural_inference": {
+      "dinov3": 4982.200000047684,
+      "flux_vae": 1814.7999999523163,
+      "dit_8_calls": 115877.90000009537,
+      "dit_readback": 0.6000001430511475,
+      "octree_8_calls": 7313.300000071526,
+      "gaussian_decoder": 7442.599999904633
+    }
+  },
+  "scene": {
+    "passed": true,
+    "count": 262144,
+    "all_arrays_present": true,
+    "all_lengths_match": true,
+    "all_values_finite": true,
+    "non_finite_values": 0,
+    "positions": { "length": 786432, "minimum": -0.6452503204345703, "maximum": 0.710349977016449 },
+    "scales": { "length": 786432, "minimum": 0.0008999999845400453, "maximum": 0.296381413936615 },
+    "rotations": { "length": 1048576, "minimum": -0.41383427381515503, "maximum": 1.403416633605957 },
+    "opacities": { "length": 262144, "minimum": 7.341658836423903e-9, "maximum": 1 },
+    "spherical_harmonics": { "length": 786432, "minimum": -2.7893776893615723, "maximum": 2.2815022468566895 },
+    "metadata": {
+      "four_step_schedule": true,
+      "prepared_input_recorded": true,
+      "spherical_harmonics_semantics": "degree-0-rgb",
+      "scale_encoding": "linear",
+      "opacity_encoding": "linear"
+    }
+  },
+  "exports": {
+    "passed": true,
+    "ply": {
+      "byte_length": 17826208,
+      "expected_byte_length": 17826208,
+      "header_bytes": 416,
+      "binary_little_endian": true,
+      "vertex_count_matches": true,
+      "sha256": "7f712a97ebbcb5b4cd4aca34f5c4cdda195e7ffb69a7d85b31a3e40361e27828"
+    },
+    "splat": {
+      "byte_length": 8388608,
+      "expected_byte_length": 8388608,
+      "sha256": "e596e628c56ec226144bc9e915313973272b7d3c3cd3bbd0db80634974fe6883"
+    }
+  },
+  "lifecycle": {
+    "scene_disposed": true,
+    "model_disposed": true,
+    "origin_storage_usage_bytes_after_disposal": 216,
+    "origin_storage_quota_bytes_reported": 10737418456
+  },
+  "observations": [
+    "The high-level package facade completed preprocessing, DINOv3, Flux VAE, eight DiT invocations, eight dynamic octree levels, Gaussian decoding, scene packing, and both exports without a server-side image or inference request.",
+    "The run is a structural execution and export-sanity pass. It does not compare this complete scene with an official PyTorch scene and therefore is not a numerical or visual end-to-end parity pass.",
+    "The browser reported only post-disposal origin-storage usage. No peak JavaScript, worker, WebGPU, driver, or unified-memory figure is claimed."
+  ]
+}

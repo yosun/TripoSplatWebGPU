@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripoSplat DINOv3 WebGPU Parity</title>
+  </head>
+  <body>
+    <main>
+      <h1>TripoSplat · DINOv3 WebGPU parity</h1>
+      <p>Builds the normalized tensor from the prepared browser image and runs the official ViT-H export.</p>
+      <label>ONNX graph <input id="model" value="/models/triposplat/dinov3_encoder.onnx" /></label>
+      <label>Fixture directory <input id="fixture" value="/fixtures/generated/dinov3-fp16" /></label>
+      <button id="run" type="button">Run DINOv3 parity gate</button>
+      <p role="status" data-testid="dino-status">Ready to validate DINOv3.</p>
+      <pre class="error" data-testid="dino-error" hidden></pre>
+      <pre data-testid="dino-result" hidden></pre>
+    </main>
+    <script type="module" src="/src/dinoLabMain.ts"></script>
+  </body>
+</html>

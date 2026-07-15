@@ -1,0 +1,10 @@
+# Install a PyTorch wheel appropriate for the host first when the default pip index
+# does not provide one. See https://pytorch.org/get-started/locally/.
+torch>=2.4
+torchvision>=0.19
+numpy>=1.26
+Pillow>=10.0
+safetensors>=0.4
+onnx>=1.16
+onnxruntime>=1.20
+

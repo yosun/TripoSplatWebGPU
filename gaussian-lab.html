@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TripoSplat WebGPU Gaussian Decoder Parity</title>
+  </head>
+  <body>
+    <main>
+      <h1>TripoSplat · Gaussian decoder WebGPU parity</h1>
+      <p>Runs one fixed-length feature-decoder invocation against official PyTorch.</p>
+      <label>ONNX graph <input id="model" value="/models/triposplat/gaussian_decoder_fp32.onnx" /></label>
+      <label>Fixture directory <input id="fixture" value="/fixtures/generated/gaussian-decoder-fp32" /></label>
+      <button id="run" type="button">Run Gaussian decoder parity gate</button>
+      <p role="status" data-testid="gaussian-status">Ready to validate Gaussian features.</p>
+      <pre class="error" data-testid="gaussian-error" hidden></pre>
+      <pre data-testid="gaussian-result" hidden></pre>
+    </main>
+    <script type="module" src="/src/gaussianLabMain.ts"></script>
+  </body>
+</html>

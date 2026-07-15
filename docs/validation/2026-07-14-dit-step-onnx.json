@@ -1,0 +1,381 @@
+{
+  "adapter": {
+    "comparison_to_untouched_official": {
+      "pred_camera": {
+        "candidate_finite": true,
+        "cosine_similarity": 0.9999999623328274,
+        "count": 5,
+        "fraction_within_tolerance": 1.0,
+        "max_absolute_error": 0.001953125,
+        "max_relative_error_at_1e-6_floor": 0.0012277470841006752,
+        "mean_absolute_error": 0.00079345703125,
+        "mean_relative_error_at_1e-6_floor": 0.0007418307717554144,
+        "passed": true,
+        "reference_finite": true,
+        "rmse": 0.0010701187960909726,
+        "worst_allowed_error": 0.0077724609375000005,
+        "worst_candidate": -1.5888671875,
+        "worst_index": [
+          0,
+          0,
+          3
+        ],
+        "worst_reference": -1.5908203125
+      },
+      "pred_latent": {
+        "candidate_finite": true,
+        "cosine_similarity": 0.9999998012606329,
+        "count": 131072,
+        "fraction_within_tolerance": 1.0,
+        "max_absolute_error": 0.005859375,
+        "max_relative_error_at_1e-6_floor": 101.12903225806451,
+        "mean_absolute_error": 0.0004901858951598115,
+        "mean_relative_error_at_1e-6_floor": 0.004845573604155535,
+        "passed": true,
+        "reference_finite": true,
+        "rmse": 0.0007060653927632059,
+        "worst_allowed_error": 0.012908203125,
+        "worst_candidate": -3.30859375,
+        "worst_index": [
+          0,
+          3942,
+          1
+        ],
+        "worst_reference": -3.302734375
+      }
+    },
+    "metadata": {
+      "attention_query_chunk": 256,
+      "real_rope_modules": 28,
+      "static_position_dtype": "float16",
+      "static_position_sha256": "b888602ae7375ffc022ea300b194de969e04a0431cefc910a9b1e570fff45149",
+      "static_position_shape": [
+        1,
+        8192,
+        1024
+      ]
+    },
+    "passed": true
+  },
+  "contract": {
+    "inputs": {
+      "camera": [
+        1,
+        1,
+        5
+      ],
+      "feature1": [
+        1,
+        4101,
+        1280
+      ],
+      "feature2": [
+        1,
+        4101,
+        128
+      ],
+      "latent": [
+        1,
+        8192,
+        16
+      ],
+      "t": [
+        1
+      ]
+    },
+    "internal_precision": "fp16",
+    "outputs": {
+      "pred_camera": [
+        1,
+        1,
+        5
+      ],
+      "pred_latent": [
+        1,
+        8192,
+        16
+      ]
+    },
+    "public_dtype": "float32",
+    "timestep_semantics": "already scaled 1000 * normalized timestep"
+  },
+  "fixture_reference_comparison": {
+    "pred_camera": {
+      "candidate_finite": true,
+      "cosine_similarity": 1.0,
+      "count": 5,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 0.0,
+      "max_relative_error_at_1e-6_floor": 0.0,
+      "mean_absolute_error": 0.0,
+      "mean_relative_error_at_1e-6_floor": 0.0,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 0.0,
+      "worst_allowed_error": 0.00321917724609375,
+      "worst_candidate": 0.07305908203125,
+      "worst_index": [
+        0,
+        0,
+        0
+      ],
+      "worst_reference": 0.07305908203125
+    },
+    "pred_latent": {
+      "candidate_finite": true,
+      "cosine_similarity": 0.9999999999999998,
+      "count": 131072,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 0.0,
+      "max_relative_error_at_1e-6_floor": 0.0,
+      "mean_absolute_error": 0.0,
+      "mean_relative_error_at_1e-6_floor": 0.0,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 0.0,
+      "worst_allowed_error": 0.007546875,
+      "worst_candidate": -1.515625,
+      "worst_index": [
+        0,
+        0,
+        0
+      ],
+      "worst_reference": -1.515625
+    }
+  },
+  "inputs": {
+    "source": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/fixtures/generated/dit-step-fp32/fixture.npz",
+    "summaries": {
+      "camera": {
+        "count": 5,
+        "l2_norm": 1.472560468196813,
+        "max": 0.6527721881866455,
+        "mean": -0.21825804114341735,
+        "min": -0.9867739081382751,
+        "std": 0.621329456870863
+      },
+      "feature1": {
+        "count": 5249280,
+        "l2_norm": 2291.728657185419,
+        "max": 5.227190971374512,
+        "mean": -0.00026312223078383146,
+        "min": -5.068299293518066,
+        "std": 1.000260942196999
+      },
+      "feature2": {
+        "count": 524928,
+        "l2_norm": 724.0301176401172,
+        "max": 4.928418159484863,
+        "mean": 0.0004281599323089276,
+        "min": -4.739129066467285,
+        "std": 0.9993249319917692
+      },
+      "latent": {
+        "count": 131072,
+        "l2_norm": 362.3905652758954,
+        "max": 4.217984199523926,
+        "mean": -8.182024848980493e-05,
+        "min": -4.327651500701904,
+        "std": 1.0009719737833631
+      },
+      "t": {
+        "count": 1,
+        "l2_norm": 1000.0,
+        "max": 1000.0,
+        "mean": 1000.0,
+        "min": 1000.0,
+        "std": 0.0
+      }
+    }
+  },
+  "measured_single_call_ms": {
+    "adapted_pytorch": 3694.747459026985,
+    "note": "Python validation measurements; not Chrome/Edge WebGPU benchmarks.",
+    "official_pytorch": 2467.122457921505,
+    "onnxruntime_inference": 40450.88462496642,
+    "onnxruntime_session_load": 3233.1878329860047
+  },
+  "onnxruntime_comparison_to_adapted_pytorch": {
+    "pred_camera": {
+      "candidate_finite": true,
+      "cosine_similarity": 0.9999997287725538,
+      "count": 5,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 0.00115966796875,
+      "max_relative_error_at_1e-6_floor": 0.01588628762541806,
+      "mean_absolute_error": 0.00062255859375,
+      "mean_relative_error_at_1e-6_floor": 0.0037937056720423025,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 0.0008064959306229946,
+      "worst_allowed_error": 0.04218994140625,
+      "worst_candidate": 0.07183837890625,
+      "worst_index": [
+        0,
+        0,
+        0
+      ],
+      "worst_reference": 0.072998046875
+    },
+    "pred_latent": {
+      "candidate_finite": true,
+      "cosine_similarity": 0.9999992986652848,
+      "count": 131072,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 0.0078125,
+      "max_relative_error_at_1e-6_floor": 39.23880597014925,
+      "mean_absolute_error": 0.0010079448020405835,
+      "mean_relative_error_at_1e-6_floor": 0.007947050740992218,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 0.0013280280142839705,
+      "worst_allowed_error": 0.079521484375,
+      "worst_candidate": -1.3095703125,
+      "worst_index": [
+        0,
+        1994,
+        12
+      ],
+      "worst_reference": -1.3173828125
+    }
+  },
+  "onnxruntime_comparison_to_untouched_official": {
+    "pred_camera": {
+      "candidate_finite": true,
+      "cosine_similarity": 0.9999998310739208,
+      "count": 5,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 0.001220703125,
+      "max_relative_error_at_1e-6_floor": 0.01670843776106934,
+      "mean_absolute_error": 0.001025390625,
+      "mean_relative_error_at_1e-6_floor": 0.004287181754913358,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 0.0010300304252797356,
+      "worst_allowed_error": 0.0421917724609375,
+      "worst_candidate": 0.07183837890625,
+      "worst_index": [
+        0,
+        0,
+        0
+      ],
+      "worst_reference": 0.07305908203125
+    },
+    "pred_latent": {
+      "candidate_finite": true,
+      "cosine_similarity": 0.9999992247028832,
+      "count": 131072,
+      "fraction_within_tolerance": 1.0,
+      "max_absolute_error": 0.0078125,
+      "max_relative_error_at_1e-6_floor": 137.58064516129033,
+      "mean_absolute_error": 0.0010670070819287503,
+      "mean_relative_error_at_1e-6_floor": 0.009851657010912073,
+      "passed": true,
+      "reference_finite": true,
+      "rmse": 0.001396933522175256,
+      "worst_allowed_error": 0.079521484375,
+      "worst_candidate": -1.3095703125,
+      "worst_index": [
+        0,
+        1994,
+        12
+      ],
+      "worst_reference": -1.3173828125
+    }
+  },
+  "output_summaries": {
+    "pred_camera": {
+      "adapted_pytorch": {
+        "count": 5,
+        "l2_norm": 2.368429657504975,
+        "max": 0.395751953125,
+        "mean": -0.7044921875,
+        "min": -1.5888671875,
+        "std": 0.79093777647884
+      },
+      "official_pytorch": {
+        "count": 5,
+        "l2_norm": 2.3707324330895307,
+        "max": 0.395751953125,
+        "mean": -0.70526123046875,
+        "min": -1.5908203125,
+        "std": 0.7916318908799885
+      },
+      "onnxruntime": {
+        "count": 5,
+        "l2_norm": 2.368886508663135,
+        "max": 0.394775390625,
+        "mean": -0.70511474609375,
+        "min": -1.58984375,
+        "std": 0.7906565961442363
+      }
+    },
+    "pred_latent": {
+      "adapted_pytorch": {
+        "count": 131072,
+        "l2_norm": 405.3680775240003,
+        "max": 5.078125,
+        "mean": 0.004793695504304196,
+        "min": -4.9609375,
+        "std": 1.1196714433777497
+      },
+      "official_pytorch": {
+        "count": 131072,
+        "l2_norm": 405.37329831289594,
+        "max": 5.078125,
+        "mean": 0.0047698384955765505,
+        "min": -4.9609375,
+        "std": 1.1196859659226734
+      },
+      "onnxruntime": {
+        "count": 131072,
+        "l2_norm": 405.34181099373615,
+        "max": 5.0859375,
+        "mean": 0.004788857071616803,
+        "min": -4.9609375,
+        "std": 1.1195989116933802
+      }
+    }
+  },
+  "passed": true,
+  "rope_primitive_gate": {
+    "atol": 0.002,
+    "max_frequency_pair_error": 0.0,
+    "max_rotated_tensor_error": 1.52587890625e-05,
+    "passed": true
+  },
+  "runtime": {
+    "external_data": [
+      "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/dit_step.onnx.data"
+    ],
+    "graph": "/Users/mbp16_2022_m1max/MyTests/TripoSplatWebGPU/public/models/triposplat/dit_step.onnx",
+    "graph_internal_precision_metadata": "fp16",
+    "onnx": "1.22.0",
+    "onnxruntime": "1.27.0",
+    "ort_providers": [
+      "CPUExecutionProvider"
+    ],
+    "platform": "macOS-26.3-arm64-arm-64bit",
+    "python": "3.12.9",
+    "torch": "2.13.0",
+    "torch_device": "mps"
+  },
+  "source": {
+    "checkout": "/private/tmp/triposplat-official-root",
+    "commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "exported_commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "loader": "official triposplat.load_flow_model",
+    "repository": "https://github.com/VAST-AI-Research/TripoSplat",
+    "tracked_source_dirty": false
+  },
+  "tolerances": {
+    "adapter": {
+      "atol": 0.003,
+      "rtol": 0.003
+    },
+    "onnxruntime": {
+      "atol": 0.04,
+      "rtol": 0.03
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "date": "2026-07-15",
+  "stage": "TripoSplat 20-step fp32 CFG/Euler flow loop",
+  "passed": false,
+  "strictPassed": false,
+  "artifact": {
+    "graph": "public/models/triposplat/dit_step_webgpu_fp32.onnx",
+    "graphBytes": 10685614,
+    "graphSha256": "558a52ea5eb0a714ba76e1b273159fe16e473424fe39abb6cc0c4ad65b4bc54d",
+    "sidecarBytes": 1633210368,
+    "sidecarSha256": "eacadf21577a976ce0a635cf8b1bbdb4b2c0cdb9cb55d4d73af87957c1e72023",
+    "transferBytes": 1643895982
+  },
+  "fixture": {
+    "sourceCommit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "internalPrecision": "fp32",
+    "latentSha256": "b85b0727b145df76a9fd16636f1681bbe193b792c453977fee7ed84b345e0706",
+    "cameraSha256": "dbd5fdcc36517136b6eefff21c32314749b972d596f0658043a71d614d4b4df4"
+  },
+  "environment": {
+    "hardware": "Apple M3 Max, 128 GB unified memory",
+    "operatingSystem": "macOS 26.3 (25D125)",
+    "browser": "Chrome 150.0.0.0",
+    "executionProvider": "webgpu",
+    "crossOriginIsolated": false,
+    "wasmFallbackAllowed": false
+  },
+  "settings": {
+    "steps": 20,
+    "guidanceScale": 3,
+    "shift": 3,
+    "predictionArithmetic": "float32",
+    "conditionalInvocations": 20,
+    "unconditionalInvocations": 20
+  },
+  "timingsMs": {
+    "modelLoad": 12510,
+    "summedInference": 676525.4999997616,
+    "summedReadback": 3.100000739097595,
+    "samplingWall": 676669.1000000238,
+    "untouchedPyTorchMpsSampling": 169155.4270000197
+  },
+  "execution": {
+    "completed": true,
+    "webgpuInvocations": 40,
+    "fallbackUsed": false
+  },
+  "qualification": {
+    "tolerance": {
+      "absolute": 0.005,
+      "relative": 0.003,
+      "minimumCosineSimilarity": 0.99999998
+    },
+    "latent": {
+      "maxAbsoluteError": 0.04870927333831787,
+      "meanAbsoluteError": 0.0003517169805631326,
+      "rmse": 0.0008120518480388128,
+      "cosineSimilarity": 0.9999996593194267,
+      "fractionWithinTolerance": 0.9983291625976562,
+      "passed": false
+    },
+    "camera": {
+      "maxAbsoluteError": 0.00013224594295024872,
+      "meanAbsoluteError": 0.00006016604602336884,
+      "rmse": 0.00007398073954035383,
+      "cosineSimilarity": 0.9999999807109508,
+      "fractionWithinTolerance": 1,
+      "passed": true
+    },
+    "passed": false
+  },
+  "strictDiagnostic": {
+    "tolerance": {
+      "absolute": 0.0001,
+      "relative": 0.001,
+      "minimumCosineSimilarity": 0.99999999
+    },
+    "latentFractionWithinTolerance": 0.83660888671875,
+    "cameraFractionWithinTolerance": 0.8,
+    "passed": false
+  },
+  "limitations": [
+    "This is a single-machine, single-run browser measurement.",
+    "The target 16 GB Apple Silicon configuration and Microsoft Edge remain unvalidated.",
+    "All 40 WebGPU invocations completed, but accumulated latent drift exceeds both recorded gates.",
+    "No peak-memory result is reported because model-only peak memory was not isolated."
+  ]
+}

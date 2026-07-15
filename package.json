@@ -1,8 +1,9 @@
 {
-  "name": "ml-sharp-web",
+  "name": "triposplat-webgpu",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.13.0",
   "workspaces": [
     "packages/*"
   ],
@@ -10,6 +11,9 @@
     "postinstall": "node scripts/sync_ort_assets.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "test": "node --test tests/*.test.ts",
+    "test:package-consumer": "node scripts/test_packed_vite_consumer.mjs",
     "build:viewer": "cd packages/sharp-splat-viewer && bun run build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -21,7 +25,7 @@
     "dialkit": "^1.3.0",
     "exifr": "^7.1.3",
     "motion": "^12.42.2",
-    "onnxruntime-web": "^1.24.2",
+    "onnxruntime-web": "1.27.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "three": "^0.183.1"
@@ -33,11 +37,29 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
+    "eslint-plugin-react-hooks": "7.0.1",
+    "eslint-plugin-react-refresh": "0.4.26",
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1"
-  }
+  },
+  "description": "An in-progress browser-local WebGPU port of [TripoSplat](https://github.com/VAST-AI-Research/TripoSplat), built from the [ml-sharp-web](https://github.com/bring-shrubbery/ml-sharp-web) application chassis. The official TripoSplat PyTorch implementation is the numerical source of truth. The existing SHARP path remains available as a known-good browser inference baseline.",
+  "main": "eslint.config.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bring-shrubbery/ml-sharp-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bring-shrubbery/ml-sharp-web/issues"
+  },
+  "homepage": "https://github.com/bring-shrubbery/ml-sharp-web#readme"
 }

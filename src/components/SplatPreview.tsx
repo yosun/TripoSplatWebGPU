@@ -8,6 +8,13 @@ export interface CameraSnapshot {
   up: [number, number, number]
 }
 
+export type SplatPreviewState = 'waiting' | 'loading' | 'ready' | 'failed'
+
+export interface SplatPreviewStatus {
+  state: SplatPreviewState
+  message: string
+}
+
 interface SplatPreviewProps {
   plyUrl: string | null
   generationKey: number
@@ -22,6 +29,7 @@ interface SplatPreviewProps {
   splatRotation: [number, number, number]
   splatFlip: [boolean, boolean, boolean]
   onCameraChange?: (snap: CameraSnapshot) => void
+  onViewerStateChange?: (status: SplatPreviewStatus) => void
   children?: ReactNode
 }
 
@@ -39,14 +47,20 @@ export function SplatPreview({
   splatRotation,
   splatFlip,
   onCameraChange,
+  onViewerStateChange,
   children,
 }: SplatPreviewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
-  const [viewerStatus, setViewerStatus] = useState<string>('Waiting for a generated splat…')
+  const [viewerStatus, setViewerStatus] = useState<SplatPreviewStatus>({
+    state: 'waiting',
+    message: 'Waiting for a generated splat…',
+  })
 
   const onCameraChangeRef = useRef(onCameraChange)
   onCameraChangeRef.current = onCameraChange
+  const onViewerStateChangeRef = useRef(onViewerStateChange)
+  onViewerStateChangeRef.current = onViewerStateChange
 
   // Refs hold the latest transform values so the mount effect can apply them
   // when the viewer is recreated, without restarting on every transform change.
@@ -61,37 +75,42 @@ export function SplatPreview({
     let cancelled = false
     let localViewer: Viewer | null = null
 
+    const publishStatus = (state: SplatPreviewState, message: string) => {
+      if (cancelled) return
+      const status = { state, message }
+      setViewerStatus(status)
+      onViewerStateChangeRef.current?.(status)
+    }
+
     const mount = async () => {
       if (!plyUrl || !containerRef.current) {
-        setViewerStatus('Waiting for a generated splat…')
+        publishStatus('waiting', 'Waiting for a generated splat…')
         return
       }
 
-      setViewerStatus('Loading splat preview…')
-
-      const module = await import('@mkkellogg/gaussian-splats-3d')
-      if (cancelled || !containerRef.current) {
-        return
-      }
-
-      const viewerOptions: Record<string, unknown> = {
-        rootElement: containerRef.current,
-        selfDrivenMode: true,
-        useBuiltInControls: true,
-        sharedMemoryForWorkers: false,
-        ignoreDevicePixelRatio: false,
-        inMemoryCompressionLevel: 0,
-        maxScreenSpaceSplatSize: maxScreenSize,
-        dynamicScene: true,
-      }
-      if (initialCameraPosition) viewerOptions.initialCameraPosition = initialCameraPosition
-      if (initialCameraTarget) viewerOptions.initialCameraLookAt = initialCameraTarget
-      if (initialCameraUp) viewerOptions.cameraUp = initialCameraUp
-
-      localViewer = new module.Viewer(viewerOptions)
-      viewerRef.current = localViewer
-
+      publishStatus('loading', 'Loading splat preview…')
       try {
+        const module = await import('@mkkellogg/gaussian-splats-3d')
+        if (cancelled || !containerRef.current) {
+          return
+        }
+
+        const viewerOptions: Record<string, unknown> = {
+          rootElement: containerRef.current,
+          selfDrivenMode: true,
+          useBuiltInControls: true,
+          sharedMemoryForWorkers: false,
+          ignoreDevicePixelRatio: false,
+          inMemoryCompressionLevel: 0,
+          maxScreenSpaceSplatSize: maxScreenSize,
+          dynamicScene: true,
+        }
+        if (initialCameraPosition) viewerOptions.initialCameraPosition = initialCameraPosition
+        if (initialCameraTarget) viewerOptions.initialCameraLookAt = initialCameraTarget
+        if (initialCameraUp) viewerOptions.cameraUp = initialCameraUp
+
+        localViewer = new module.Viewer(viewerOptions)
+        viewerRef.current = localViewer
         localViewer.start()
         const initialPos = splatPositionRef.current
         const initialRot = splatRotationRef.current
@@ -120,10 +139,13 @@ export function SplatPreview({
         })
         attachCameraReporter(localViewer, () => onCameraChangeRef.current)
 
-        setViewerStatus('Preview ready. Drag to orbit, scroll to zoom.')
+        publishStatus('ready', 'Preview ready. Drag to orbit, scroll to zoom.')
       } catch (error) {
         if (!cancelled) {
-          setViewerStatus(`Preview failed: ${error instanceof Error ? error.message : String(error)}`)
+          publishStatus(
+            'failed',
+            `Preview failed: ${error instanceof Error ? error.message : String(error)}`,
+          )
         }
       }
     }
@@ -163,10 +185,16 @@ export function SplatPreview({
     <section className="panel preview-panel">
       <div className="preview-toolbar">
         <span className="preview-title">Gaussian Splat Preview</span>
-        <span className="preview-status">{viewerStatus}</span>
+        <span
+          className="preview-status"
+          data-testid="splat-preview-status"
+          data-viewer-state={viewerStatus.state}
+        >
+          {viewerStatus.message}
+        </span>
       </div>
       <div className="splat-canvas-shell">
-        <div ref={containerRef} className="splat-canvas-host" />
+        <div ref={containerRef} className="splat-canvas-host" data-testid="splat-canvas-host" />
         {!plyUrl ? <div className="splat-empty">Generate a splat to preview it here.</div> : null}
       </div>
       {children}

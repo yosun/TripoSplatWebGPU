@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "scope": "TripoSplat DINOv3 encoder vertical slice only",
+  "executionProvider": "webgpu",
+  "graph": {
+    "file": "dinov3_encoder_fp32.onnx",
+    "bytes": 5804316,
+    "sha256": "9f7b1719c47ac833547a148506585db7b5d3b20a1d824b7185b696a3367ea4ae",
+    "externalData": {
+      "file": "dinov3_encoder_fp32.onnx.data",
+      "bytes": 3362042880,
+      "sha256": "163bdfaee3be63958d540ac710b4901b932909abb61cecba86eeaab1518df6f5"
+    }
+  },
+  "fixture": {
+    "source": "official TripoSplat DINOv3 PyTorch fp32 with the official extra fp32 non-affine layer normalization",
+    "pixelValuesSha256": "eba8700f2cbf7489135a3ef4d3f456e62e84a3f9e813493454795ae716b08c6e",
+    "feature1Sha256": "520b195e9cf5fa3d95a76e471cfec3cd7cf8d4c467f41eb311147229801025f6"
+  },
+  "timingsMs": {
+    "modelLoad": 8702.100000023842,
+    "inference": 4262.400000095367,
+    "readback": 2.399999976158142
+  },
+  "modelTransferBytes": 3367847196,
+  "preprocessing": {
+    "count": 3145728,
+    "maxAbsoluteError": 0,
+    "meanAbsoluteError": 0,
+    "rmse": 0,
+    "cosineSimilarity": 1,
+    "finite": true
+  },
+  "comparison": {
+    "count": 5249280,
+    "maxAbsoluteError": 0.00019439496099948883,
+    "meanAbsoluteError": 0.0000014715075694741064,
+    "rmse": 0.0000024489918653320206,
+    "cosineSimilarity": 0.9999999999966059,
+    "finite": true,
+    "fractionWithinTolerance": 1,
+    "maxErrorIndex": 3571410,
+    "referenceAtMaxError": 0.0263534989207983,
+    "candidateAtMaxError": 0.026159103959798813,
+    "passed": true
+  },
+  "tolerance": {
+    "absolute": 0.0003,
+    "relative": 0.001,
+    "minimumCosineSimilarity": 0.999999999
+  },
+  "environment": {
+    "browser": "Codex Chromium 150.0.7871.115",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "host": "Apple M3 Max, 128 GB unified memory",
+    "crossOriginIsolated": false,
+    "webgpu": true
+  },
+  "limitations": [
+    "This report validates only preprocessing plus the DINOv3 encoder graph.",
+    "The target 16 GB Apple Silicon configuration and Microsoft Edge are not validated by this measurement.",
+    "The reported timings are single-run measurements and are not a distribution."
+  ]
+}

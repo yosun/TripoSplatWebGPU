@@ -1,0 +1,72 @@
+{
+  "passed": true,
+  "component": "octree_occupancy_and_host_sampling_trajectory",
+  "source": {
+    "repository": "https://github.com/VAST-AI-Research/TripoSplat",
+    "commit": "a78fa12d06dbf1381ca548bfac32bb68cb8c451d",
+    "fixture": "public/fixtures/generated/octree-trajectory-flow4-fp32/octree.json",
+    "condition": "official four-step fp32 flow latent",
+    "internal_precision": "fp32",
+    "official_pytorch_device": "mps",
+    "official_pytorch_octree_sampling_ms": 5711.964708054438
+  },
+  "browser": {
+    "execution_provider": "webgpu",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "cross_origin_isolated": false,
+    "webgpu": true,
+    "model_load_ms": 1327.3999999761581,
+    "model_transfer_bytes": 221419396,
+    "primary_octree_inference_ms_sum": 5713.700000166893,
+    "padding_probe_inference_ms_sum": 5673.100000143051,
+    "all_16_inference_calls_ms_sum": 11386.800000309944,
+    "readback_ms_sum": 0.8000000715255737,
+    "trajectory_wall_ms": 11415.300000071526,
+    "note": "The validation deliberately runs two calls per level: the official zero-padded input and a varied-tail padding probe. The primary eight-call sum is reported separately and is not an end-to-end generation benchmark."
+  },
+  "neural_tolerance": {
+    "absolute": 0.005,
+    "relative": 0.01,
+    "minimum_cosine_similarity": 0.99999,
+    "requires_every_value_within_combined_tolerance": true
+  },
+  "levels": [
+    { "level": 1, "resolution": 2, "parent_count": 1, "logits_max_absolute_error": 9.834766387939453e-7, "logits_mean_absolute_error": 6.300397217273712e-7, "logits_cosine_similarity": 0.9999999999989475, "padding_max_absolute_error": 0, "sampled_child_count_mismatches": 0, "inference_ms": 751, "padding_probe_inference_ms": 708.6000000238419, "passed": true },
+    { "level": 2, "resolution": 4, "parent_count": 8, "logits_max_absolute_error": 0.00002574920654296875, "logits_mean_absolute_error": 0.000008727191016077995, "logits_cosine_similarity": 0.9999999999990608, "padding_max_absolute_error": 0, "sampled_child_count_mismatches": 0, "inference_ms": 708.2000000476837, "padding_probe_inference_ms": 705.8999999761581, "passed": true },
+    { "level": 3, "resolution": 8, "parent_count": 28, "logits_max_absolute_error": 0.000040531158447265625, "logits_mean_absolute_error": 0.00000614730327340242, "logits_cosine_similarity": 0.9999999999992477, "padding_max_absolute_error": 0, "sampled_child_count_mismatches": 0, "inference_ms": 713.7000000476837, "padding_probe_inference_ms": 708.6000000238419, "passed": true },
+    { "level": 4, "resolution": 16, "parent_count": 116, "logits_max_absolute_error": 0.000031948089599609375, "logits_mean_absolute_error": 0.00000514517636600368, "logits_cosine_similarity": 0.9999999999993746, "padding_max_absolute_error": 0, "sampled_child_count_mismatches": 0, "inference_ms": 709.2000000476837, "padding_probe_inference_ms": 710.6000000238419, "passed": true },
+    { "level": 5, "resolution": 32, "parent_count": 541, "logits_max_absolute_error": 0.000064849853515625, "logits_mean_absolute_error": 0.000006682956094170151, "logits_cosine_similarity": 0.9999999999985248, "padding_max_absolute_error": 0, "sampled_child_count_mismatches": 0, "inference_ms": 708.1000000238419, "padding_probe_inference_ms": 708.3000000715256, "passed": true },
+    { "level": 6, "resolution": 64, "parent_count": 2301, "logits_max_absolute_error": 0.00010533630847930908, "logits_mean_absolute_error": 0.0000071619101944215585, "logits_cosine_similarity": 0.9999999999971853, "padding_max_absolute_error": 0, "sampled_child_count_mismatches": 0, "inference_ms": 708.3000000715256, "padding_probe_inference_ms": 707.1000000238419, "passed": true },
+    { "level": 7, "resolution": 128, "parent_count": 6245, "logits_max_absolute_error": 0.00011444091796875, "logits_mean_absolute_error": 0.000006381808854451602, "logits_cosine_similarity": 0.9999999999930113, "padding_max_absolute_error": 0, "sampled_child_count_mismatches": 0, "inference_ms": 707, "padding_probe_inference_ms": 708, "passed": true },
+    { "level": 8, "resolution": 256, "parent_count": 8156, "logits_max_absolute_error": 0.00013017654418945312, "logits_mean_absolute_error": 0.000005863580693154061, "logits_cosine_similarity": 0.9999999999863645, "padding_max_absolute_error": 0, "sampled_child_count_mismatches": 0, "inference_ms": 708.1999999284744, "padding_probe_inference_ms": 716, "passed": true }
+  ],
+  "host_replay": {
+    "passed": true,
+    "parent_centers_max_absolute_error_all_levels": 0,
+    "sampled_child_count_mismatches_all_levels": 0,
+    "random_values_consumed": 41972,
+    "random_values_expected": 41972,
+    "points": {
+      "count": 24576,
+      "max_absolute_error": 0,
+      "mean_absolute_error": 0,
+      "rmse": 0,
+      "cosine_similarity": 1,
+      "passed": true
+    },
+    "log_probabilities": {
+      "count": 8192,
+      "max_absolute_error": 0.00000286102294921875,
+      "mean_absolute_error": 4.1874591261148453e-7,
+      "rmse": 7.433424509308886e-7,
+      "cosine_similarity": 0.9999999999999923,
+      "passed": true
+    }
+  },
+  "observations": [
+    "Every active WebGPU occupancy logit passed at all eight official frontiers.",
+    "Replacing the zero-padded inactive tail with nonzero normalized coordinates changed no active output bit at any level.",
+    "The TypeScript systematic-resampling implementation reproduced every official sampled child count.",
+    "The TypeScript compaction, expansion, and captured-jitter replay produced bit-identical final points."
+  ]
+}
