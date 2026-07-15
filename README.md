@@ -1,6 +1,22 @@
 # TripoSplat WebGPU
 
+
 An in-progress browser-local WebGPU port of [TripoSplat](https://github.com/VAST-AI-Research/TripoSplat), built from the [ml-sharp-web](https://github.com/bring-shrubbery/ml-sharp-web) application chassis. The official TripoSplat PyTorch implementation is the numerical source of truth. The existing SHARP path remains available as a known-good browser inference baseline.
+
+
+## Quick Test 
+ 
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Open the end-to-end lab at: http://localhost:<PORT>/e2e-lab.html
+
+Our test inputs and recorded outputs are stored in: https://github.com/yosun/TripoSplatWebGPU/tree/main/public/_testers
+
+
 
 > **Current milestone, not a production release.** The alpha `@ai3d/triposplat-webgpu` workspace package contains the five-stage browser executor and a complete 6.465 GB fp32 manifest. A measured prepared-image run now completes the entire packaged browser path, exports 262,144 finite Gaussians, and loads the PLY into the retained browser viewer with a live canvas. DINOv3, Flux VAE, one DiT invocation, the full eight-level octree trajectory, and the raw Gaussian decoder boundary also pass their recorded Chrome/WebGPU gates. The four-step loop passes its qualification envelope but misses a stricter diagnostic; the measured 20-step loop fails its final-state gate. Official whole-scene/render parity, bundled BiRefNet, Edge/16 GB qualification, and production memory measurements remain release blockers. See [Current status](docs/current-status.md) before integrating or benchmarking this work.
 
