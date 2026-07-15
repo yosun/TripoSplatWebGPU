@@ -12,9 +12,9 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the end-to-end lab at: http://localhost:<PORT>/e2e-lab.html
+Open the end-to-end lab at: `http://localhost:<PORT>/e2e-lab.html`
 
-Our test inputs and recorded outputs are stored in: https://github.com/yosun/TripoSplatWebGPU/tree/main/public/_testers
+Our test inputs and recorded outputs are stored in: `https://github.com/yosun/TripoSplatWebGPU/tree/main/public/_testers`
 
 
 
