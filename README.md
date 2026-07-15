@@ -146,3 +146,22 @@ The inference design is browser-local: source images are decoded and processed i
 Do not publish this repository or model bundle under a new blanket license yet. TripoSplat source and its released repository material are MIT-licensed at the pinned reference revision. Apple SHARP code uses Apple's repository license, while Apple SHARP model weights are restricted to research purposes. The inherited `ml-sharp-web` snapshot has no detected root license, so redistribution rights for copied chassis code must be clarified or that code must be reimplemented before a public package release.
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). This project does not bundle SHARP or TripoSplat weights into an npm package.
+
+
+## Authorship and provenance
+
+TripoSplat WebGPU was directed, developed, tested, and validated by
+
+[Yosun Chang](https://github.com/yosun), with substantial implementation
+
+assistance from OpenAI Codex using GPT-5.6 Ultra.
+
+The repository began from the `ml-sharp-web` application chassis, whose
+
+original Git history is retained for provenance. Names shown by GitHub in
+
+the contributor panel therefore include upstream contributors and do not
+
+represent authorship of the TripoSplat WebGPU port.
+
+The official TripoSplat implementation remains the numerical source of truth.
