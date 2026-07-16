@@ -144,6 +144,13 @@ def int_metadata(metadata: Mapping[str, str], name: str) -> int:
     return value
 
 
+def bool_metadata(metadata: Mapping[str, str], name: str) -> bool:
+    raw_value = metadata.get(name, "false")
+    if raw_value not in {"true", "false"}:
+        raise ValueError(f"Graph metadata {name!r} must be true or false")
+    return raw_value == "true"
+
+
 def adapter_configuration(metadata: Mapping[str, str]) -> dict[str, Any]:
     precision = metadata.get("triposplat.internal_precision")
     if precision not in {"fp16", "fp32"}:
@@ -167,6 +174,9 @@ def adapter_configuration(metadata: Mapping[str, str]) -> dict[str, Any]:
         "precision": precision,
         "attention_query_chunk": int_metadata(
             metadata, "triposplat.attention_query_chunk"
+        ),
+        "collapsed_unconditional_context": bool_metadata(
+            metadata, "triposplat.collapsed_unconditional_context"
         ),
         "attention_head_chunk": int_metadata(
             metadata, "triposplat.attention_head_chunk"
@@ -430,6 +440,13 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
             raise ValueError(f"Probe {value.name} has shape {shape}; expected {PROBE_SHAPE}")
 
     config = adapter_configuration(metadata)
+    if config["collapsed_unconditional_context"]:
+        raise ValueError(
+            "Collapsed unconditional-context probe graphs are unsupported: this "
+            "validator requires a paired conditional call, which is invalid for an "
+            "unconditional-only graph. Use validate_dit_onnx.py with an all-zero "
+            "unconditional invocation instead."
+        )
     repo = args.triposplat_repo.expanduser().resolve()
     commit, dirty = source_revision(repo)
     if dirty and not args.allow_dirty_official_source:
@@ -509,6 +526,9 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
         model,
         source.model_module,
         attention_query_chunk=config["attention_query_chunk"],
+        collapsed_unconditional_context=config[
+            "collapsed_unconditional_context"
+        ],
         attention_head_chunk=config["attention_head_chunk"],
         attention_head_padding=config["attention_head_padding"],
         qk_norm_padding_tokens=config["qk_norm_padding_tokens"],
@@ -644,6 +664,9 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
             "probe_count": len(PROBE_ORDER),
             "probe_shape": list(PROBE_SHAPE),
             "internal_precision": config["precision"],
+            "collapsed_unconditional_context": config[
+                "collapsed_unconditional_context"
+            ],
         },
         "runtime": {
             "platform": platform.platform(),

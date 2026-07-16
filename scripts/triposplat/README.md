@@ -68,6 +68,15 @@ The DiT validator can consume one recorded call directly, including the implicit
 python scripts/triposplat/validate_dit_onnx.py --triposplat-repo /path/to/TripoSplat --weights /path/to/triposplat_fp16.safetensors --onnx public/models/triposplat/dit_step_webgpu_fp32.onnx --trajectory-fixture-dir public/fixtures/generated/flow4-fp32-trajectory --trajectory-invocation 8 --device mps --atol 0.0001 --rtol 0.001 --report /path/to/invocation-08.json
 ```
 
+A collapsed unconditional-only candidate keeps the public conditioning inputs but requires both tensors to be exactly zero. Export it separately, then validate the final unconditional call (invocation 40) from a recorded 20-step trajectory:
+
+```bash
+python scripts/triposplat/export_dit_onnx.py --triposplat-repo /path/to/TripoSplat --weights /path/to/triposplat_fp16.safetensors --output /tmp/dit-step-collapsed-unconditional.onnx --internal-precision fp32 --device mps --collapsed-unconditional-context
+python scripts/triposplat/validate_dit_onnx.py --triposplat-repo /path/to/TripoSplat --weights /path/to/triposplat_fp16.safetensors --onnx /tmp/dit-step-collapsed-unconditional.onnx --trajectory-fixture-dir public/fixtures/generated/flow20-fp32-trajectory --trajectory-invocation 40 --device mps --collapsed-unconditional-context --atol 0.0001 --rtol 0.001 --report /path/to/invocation-40-collapsed-unconditional.json
+```
+
+For zero conditioning, all 4,101 embedded context rows are identical. The candidate retains one representative through both context refiners. In each one-token context self-attention it adds `log(4101)` to key 0; in each 8,194-token joint self-attention it adds `log(4101)` to key 8,192. Before softmax, `exp(score + log(4101)) = 4101 * exp(score)`, exactly restoring the aggregate weight and value contribution of the 4,101 identical keys while keeping 8,192 latent tokens and one camera token. Without `--collapsed-unconditional-context`, export retains the canonical graph and functional SDPA paths.
+
 `export_dit_onnx.py --rms-norm-eps ...` enables an experimental explicit stable-RMS rewrite inspired by the Core AI conversion notes. It is a diagnostic variant, not the canonical graph and not a parity or performance result. A variant must pass the same untouched-official gates before it can replace the default official `F.normalize` behavior.
 
 To localize a value-dependent failure without retaining every 12,294-token activation, add the `blocks` diagnostic outputs and compare a conditional/unconditional trajectory pair. The validator retains only a `[1,4,16]` slice at embeddings, attention residuals, refiner outputs, and joint-block outputs; it does not replace the full-output gate:

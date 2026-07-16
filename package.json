@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "postinstall": "node scripts/sync_ort_assets.mjs",
+    "prebuild": "pnpm --filter @ai3d/gaussian-scene build && pnpm --filter @ai3d/triposplat-webgpu build",
+    "pretypecheck": "pnpm --filter @ai3d/gaussian-scene build && pnpm --filter @ai3d/triposplat-webgpu build",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",

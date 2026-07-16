@@ -135,6 +135,16 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--collapsed-unconditional-context",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Export an unconditional-only graph that consumes zero public conditioning "
+            "through both official embedders, retains one representative context token, "
+            "and restores its 4,101-key attention multiplicity (default: disabled)."
+        ),
+    )
+    parser.add_argument(
         "--attention-head-chunk",
         type=int,
         default=16,
@@ -814,6 +824,7 @@ def export_graph(args: argparse.Namespace) -> list[Path]:
         flow_model,
         source.model_module,
         attention_query_chunk=args.attention_query_chunk,
+        collapsed_unconditional_context=args.collapsed_unconditional_context,
         attention_head_chunk=args.attention_head_chunk,
         attention_head_padding=args.attention_head_padding,
         qk_norm_padding_tokens=args.qk_norm_padding_tokens,
@@ -864,7 +875,11 @@ def export_graph(args: argparse.Namespace) -> list[Path]:
             )
 
         metadata = {
-            "triposplat.component": "flow_dit_one_step",
+            "triposplat.component": (
+                "flow_dit_unconditional_only_one_step"
+                if adapter.collapsed_unconditional_context
+                else "flow_dit_one_step"
+            ),
             "triposplat.source_repository": OFFICIAL_REPOSITORY_URL,
             "triposplat.source_commit": commit,
             "triposplat.source_files_dirty": str(bool(dirty)).lower() if dirty is not None else "unknown",
@@ -879,8 +894,21 @@ def export_graph(args: argparse.Namespace) -> list[Path]:
             ),
             "triposplat.rope_export": "algebraically exact real pair rotation",
             "triposplat.rope_modules": str(adapter.real_rope_modules),
-            "triposplat.attention_export": "exact independent head- and query-axis chunks",
+            "triposplat.conditioning_mode": (
+                "unconditional only; feature1 and feature2 must be exactly zero"
+                if adapter.collapsed_unconditional_context
+                else "canonical conditional and unconditional"
+            ),
+            "triposplat.attention_export": (
+                "unconditional-only collapsed context with explicit float32 "
+                "query-chunked self-attention and log(4101) retained-key multiplicity"
+                if adapter.collapsed_unconditional_context
+                else "canonical functional SDPA in independent head/query chunks"
+            ),
             "triposplat.attention_query_chunk": str(adapter.attention_query_chunk),
+            "triposplat.collapsed_unconditional_context": str(
+                adapter.collapsed_unconditional_context
+            ).lower(),
             "triposplat.attention_head_chunk": str(adapter.attention_head_chunk),
             "triposplat.attention_head_padding": str(adapter.attention_head_padding),
             "triposplat.qk_norm_padding_tokens": str(adapter.qk_norm_padding_tokens),
@@ -900,7 +928,14 @@ def export_graph(args: argparse.Namespace) -> list[Path]:
                 adapter.attention_output_reduction_chunk
             ),
             "triposplat.attention_output_modules": str(adapter.attention_output_modules),
-            "triposplat.attention_compute": "float32 scores, softmax, and value accumulation; cast output to model dtype",
+            "triposplat.attention_compute": (
+                "unconditional-only explicit float32 scores, softmax, and value "
+                "matmul for collapsed lengths 1 and 8194 with log(4101) on the "
+                "retained context key; all other attention uses functional SDPA; "
+                "output cast to model dtype"
+                if adapter.collapsed_unconditional_context
+                else "functional SDPA for every attention path; output cast to model dtype"
+            ),
             "triposplat.rope_primitive_gate": json.dumps(primitive_gate, sort_keys=True),
             "triposplat.static_position_shape": json.dumps(adapter.static_position_shape),
             "triposplat.static_position_dtype": adapter.static_position_dtype,

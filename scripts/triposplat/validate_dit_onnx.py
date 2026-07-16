@@ -169,6 +169,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--collapsed-unconditional-context",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Optionally require collapsed unconditional-only context to be enabled or "
+            "disabled. Missing metadata reconstructs the disabled canonical graph."
+        ),
+    )
+    parser.add_argument(
         "--attention-head-chunk",
         type=int,
         metavar="HEADS",
@@ -459,6 +468,26 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
             f"{graph_attention_query_chunk}"
         )
     attention_query_chunk = graph_attention_query_chunk
+    collapsed_unconditional_context_value = graph_metadata.get(
+        "triposplat.collapsed_unconditional_context", "false"
+    )
+    if collapsed_unconditional_context_value not in {"true", "false"}:
+        raise ValueError(
+            "Graph collapsed unconditional-context metadata must be true or false"
+        )
+    collapsed_unconditional_context = (
+        collapsed_unconditional_context_value == "true"
+    )
+    if (
+        args.collapsed_unconditional_context is not None
+        and args.collapsed_unconditional_context
+        != collapsed_unconditional_context
+    ):
+        raise ValueError(
+            "Expected collapsed unconditional context "
+            f"{args.collapsed_unconditional_context}, graph records "
+            f"{collapsed_unconditional_context}"
+        )
     try:
         graph_attention_head_chunk = int(
             graph_metadata.get("triposplat.attention_head_chunk", "0")
@@ -568,6 +597,19 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
         fixture_expected = {}
         input_source = f"deterministic synthetic inputs (seed={args.seed})"
 
+    if collapsed_unconditional_context:
+        nonzero_conditioning = {
+            name: int(np.count_nonzero(inputs[name]))
+            for name in ("feature1", "feature2")
+            if np.count_nonzero(inputs[name]) != 0
+        }
+        if nonzero_conditioning:
+            raise ValueError(
+                "Collapsed unconditional-context graphs require feature1 and feature2 "
+                "to be exactly zero; nonzero counts are "
+                f"{nonzero_conditioning}"
+            )
+
     ort_atol = args.atol if args.atol is not None else (4e-2 if precision == "fp16" else 2e-3)
     ort_rtol = args.rtol if args.rtol is not None else (3e-2 if precision == "fp16" else 2e-3)
     adapter_atol = (
@@ -631,6 +673,7 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
         flow_model,
         source.model_module,
         attention_query_chunk=attention_query_chunk,
+        collapsed_unconditional_context=collapsed_unconditional_context,
         attention_head_chunk=attention_head_chunk,
         attention_head_padding=attention_head_padding,
         qk_norm_padding_tokens=qk_norm_padding_tokens,
@@ -714,6 +757,12 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
             "inputs": {name: list(INPUT_SHAPES[name]) for name in INPUT_NAMES},
             "outputs": {name: list(OUTPUT_SHAPES[name]) for name in OUTPUT_NAMES},
             "timestep_semantics": "already scaled 1000 * normalized timestep",
+            "collapsed_unconditional_context": collapsed_unconditional_context,
+            "conditioning_requirement": (
+                "feature1 and feature2 must be exactly zero"
+                if collapsed_unconditional_context
+                else "canonical conditional and unconditional inputs"
+            ),
         },
         "source": {
             "repository": OFFICIAL_REPOSITORY_URL,
@@ -733,6 +782,9 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
             "metadata": {
                 "real_rope_modules": adapter_metadata.real_rope_modules,
                 "attention_query_chunk": adapter_metadata.attention_query_chunk,
+                "collapsed_unconditional_context": (
+                    adapter_metadata.collapsed_unconditional_context
+                ),
                 "attention_head_chunk": adapter_metadata.attention_head_chunk,
                 "attention_head_padding": adapter_metadata.attention_head_padding,
                 "qk_norm_padding_tokens": adapter_metadata.qk_norm_padding_tokens,

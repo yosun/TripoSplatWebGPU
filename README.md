@@ -46,6 +46,12 @@ Our test inputs and recorded outputs are stored in [`public/_testers`](https://g
 
 “PASS” above means the recorded fixture met its declared numerical thresholds. It does not establish general image quality, end-to-end correctness, leak-free repeated generation, or support on untested devices.
 
+## Current DiT experiment
+
+An opt-in `--collapsed-unconditional-context` DiT export is under investigation to localize the remaining unconditional-context reduction error. It still accepts the normal public conditioning tensors, passes them through both official embedders, retains one representative context token, and applies a `log(4101)` attention bias to preserve the aggregate contribution of the 4,101 identical zero-conditioning keys.
+
+This is an **unconditional-only diagnostic graph**: both `feature1` and `feature2` must be exactly zero, it cannot replace the canonical conditional/unconditional graph, and it is not part of the browser manifest. It has no recorded parity result yet. Export and validate it separately with the [TripoSplat script guide](scripts/triposplat/README.md); only an untouched-official and ONNX Runtime parity pass can promote it beyond this experiment.
+
 ## Measured browser results
 
 All browser measurements below came from one Apple M3 Max Mac with 128 GB unified memory, macOS 26.3, and Chrome 150 using ONNX Runtime WebGPU 1.27.0. WASM fallback was disabled. They are not estimates and must not be extrapolated to the 16 GB target.
@@ -79,11 +85,12 @@ Requirements:
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
-pnpm --filter @ai3d/gaussian-scene build
 pnpm typecheck
 pnpm test
 pnpm dev
 ```
+
+`pnpm typecheck` first builds the `@ai3d/gaussian-scene` and `@ai3d/triposplat-webgpu` workspace packages, so the root tests resolve their generated package output without a separate manual build step.
 
 The development server exposes a public runner and engineering validation surfaces:
 

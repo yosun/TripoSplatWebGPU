@@ -89,6 +89,7 @@ class AdapterMetadata:
     static_position_shape: tuple[int, ...]
     static_position_dtype: str
     static_position_sha256: str
+    collapsed_unconditional_context: bool = False
 
 
 def resolved_file(path: Path, description: str) -> Path:
@@ -393,24 +394,32 @@ def _scaled_dot_product_attention_query_chunked(
     kv: Any = None,
     *,
     query_chunk_size: int,
+    collapsed_unconditional_context: bool,
     head_chunk_size: int,
     head_padding_size: int,
 ) -> Any:
     """Official SDPA split along independent head and query-token axes.
 
     Each query row has the same keys, values, scale, and row-wise softmax as the
-    untouched operation.  Splitting queries therefore changes no attention
+    untouched operation. Splitting queries therefore changes no attention
     dependency while preventing ONNX Runtime WebGPU from materializing the full
-    ``[B,H,Lq,Lk]`` score tensor. A trailing duplicate head shields an ORT WebGPU
-    1.27 correctness defect that corrupts the final head of the final SDPA group;
-    the duplicate output is discarded. The fixed-shape exporter unrolls both loops.
+    ``[B,H,Lq,Lk]`` score tensor. The unconditional-only collapsed specialization
+    explicitly evaluates its one-token context and 8,194-token joint attention,
+    adding a constant log-multiplicity bias for the retained context key. A trailing
+    duplicate head shields an ORT WebGPU 1.27 correctness defect that corrupts the
+    final head of the final SDPA group; the duplicate output is discarded. The
+    fixed-shape exporter unrolls all loops.
     """
+
+    import math
 
     import torch
     import torch.nn.functional as functional
 
     if not isinstance(query_chunk_size, int) or query_chunk_size <= 0:
         raise ValueError("query_chunk_size must be a positive integer")
+    if not isinstance(collapsed_unconditional_context, bool):
+        raise TypeError("collapsed_unconditional_context must be a bool")
     if not isinstance(head_chunk_size, int) or head_chunk_size <= 0:
         raise ValueError("head_chunk_size must be a positive integer")
     if not isinstance(head_padding_size, int) or head_padding_size < 0:
@@ -421,6 +430,12 @@ def _scaled_dot_product_attention_query_chunked(
         k, v = kv.unbind(dim=2)
     if q is None or k is None or v is None:
         raise ValueError("Chunked attention requires q, k, and v tensors")
+    collapsed_length = int(q.shape[1])
+    use_collapsed_attention = (
+        collapsed_unconditional_context
+        and collapsed_length in {1, LATENT_TOKENS + 2}
+        and int(k.shape[1]) == collapsed_length
+    )
     output_dtype = q.dtype
     q, k, v = (
         q.permute(0, 2, 1, 3),
@@ -432,6 +447,33 @@ def _scaled_dot_product_attention_query_chunked(
     # carry 24 residual blocks through fp16 softmax accumulation.
     k_float = k.float()
     v_float = v.float()
+    if use_collapsed_attention:
+        log_multiplicity = math.log(CONDITION_TOKENS)
+        if collapsed_length == 1:
+            key_bias = torch.full(
+                (1,),
+                log_multiplicity,
+                dtype=torch.float32,
+                device=q.device,
+            )
+        else:
+            key_bias = torch.cat(
+                (
+                    torch.zeros(
+                        LATENT_TOKENS,
+                        dtype=torch.float32,
+                        device=q.device,
+                    ),
+                    torch.full(
+                        (1,),
+                        log_multiplicity,
+                        dtype=torch.float32,
+                        device=q.device,
+                    ),
+                    torch.zeros(1, dtype=torch.float32, device=q.device),
+                )
+            )
+        key_bias = key_bias.reshape(1, 1, 1, collapsed_length)
     head_groups = []
     for head_start in range(0, q.shape[1], head_chunk_size):
         head_end = min(head_start + head_chunk_size, q.shape[1])
@@ -447,14 +489,26 @@ def _scaled_dot_product_attention_query_chunked(
             head_q = torch.cat((head_q, head_q[:, :head_padding_size, :, :]), dim=1)
             head_k = torch.cat((head_k, head_k[:, :head_padding_size, :, :]), dim=1)
             head_v = torch.cat((head_v, head_v[:, :head_padding_size, :, :]), dim=1)
-        query_chunks = [
-            functional.scaled_dot_product_attention(
-                head_q[:, :, start : start + query_chunk_size, :].float(),
-                head_k,
-                head_v,
-            ).to(dtype=output_dtype)
-            for start in range(0, q.shape[2], query_chunk_size)
-        ]
+        if not use_collapsed_attention:
+            query_chunks = [
+                functional.scaled_dot_product_attention(
+                    head_q[:, :, start : start + query_chunk_size, :].float(),
+                    head_k,
+                    head_v,
+                ).to(dtype=output_dtype)
+                for start in range(0, q.shape[2], query_chunk_size)
+            ]
+        else:
+            scale = float(head_q.shape[-1]) ** -0.5
+            query_chunks = []
+            for query_start in range(0, q.shape[2], query_chunk_size):
+                query = head_q[
+                    :, :, query_start : query_start + query_chunk_size, :
+                ].float()
+                scores = torch.matmul(query, head_k.transpose(-2, -1)) * scale
+                probabilities = torch.softmax(scores + key_bias, dim=-1)
+                output = torch.matmul(probabilities, head_v)
+                query_chunks.append(output.to(dtype=output_dtype))
         head_groups.append(torch.cat(query_chunks, dim=2)[:, :real_head_count, :, :])
     return torch.cat(head_groups, dim=1).permute(0, 2, 1, 3)
 
@@ -511,11 +565,130 @@ def validate_real_rope_primitives(
     }
 
 
+def _collapsed_unconditional_forward(self: Any, x_t: Any, t: Any, cond: Any) -> Any:
+    """Official forward specialized to all-zero conditioning without source edits."""
+
+    import torch
+    import torch.nn.functional as functional
+
+    if (
+        len(self.noise_refiner) != 2
+        or len(self.context_refiner) != 2
+        or len(self.blocks) != 24
+    ):
+        raise ValueError(
+            "Collapsed unconditional context requires 2 noise refiners, 2 context "
+            "refiners, and 24 joint blocks"
+        )
+    if self.cond_embedder2 is None or self.cam_channels is None:
+        raise ValueError(
+            "Collapsed unconditional context requires both condition embedders and camera"
+        )
+
+    d = self.dtype
+    z = x_t["latent"].to(d)
+    feat1 = cond["feature1"].to(d)
+    feat2 = cond["feature2"].to(d)
+    if tuple(z.shape) != LATENT_SHAPE:
+        raise ValueError(f"Collapsed latent shape is {tuple(z.shape)}, expected {LATENT_SHAPE}")
+    if tuple(feat1.shape) != FEATURE1_SHAPE:
+        raise ValueError(
+            f"Collapsed feature1 shape is {tuple(feat1.shape)}, expected {FEATURE1_SHAPE}"
+        )
+    if tuple(feat2.shape) != FEATURE2_SHAPE:
+        raise ValueError(
+            f"Collapsed feature2 shape is {tuple(feat2.shape)}, expected {FEATURE2_SHAPE}"
+        )
+    if tuple(t.shape) != TIMESTEP_SHAPE:
+        raise ValueError(
+            f"Collapsed timestep shape is {tuple(t.shape)}, expected {TIMESTEP_SHAPE}"
+        )
+    self.pos_pe = self.pos_pe.to(z.device)
+
+    h_x = self.input_layer(z)
+    h_cond = self.cond_embedder(feat1)
+    h_cond = h_cond + self.cond_embedder2(feat2)
+    expected_condition_shape = (BATCH_SIZE, CONDITION_TOKENS, int(self.model_channels))
+    if tuple(h_cond.shape) != expected_condition_shape:
+        raise ValueError(
+            f"Embedded condition shape is {tuple(h_cond.shape)}, expected "
+            f"{expected_condition_shape}"
+        )
+    # Both public feature tensors have been consumed by their official embedders.
+    # For all-zero features every row is the same learned-bias representative.
+    h_cond = h_cond[:, :1, :]
+    expected_collapsed_shape = (BATCH_SIZE, 1, int(self.model_channels))
+    if tuple(h_cond.shape) != expected_collapsed_shape:
+        raise ValueError(
+            f"Collapsed condition shape is {tuple(h_cond.shape)}, expected "
+            f"{expected_collapsed_shape}"
+        )
+    t_emb = self.t_embedder(t)
+    t_mod = self.adaLN_modulation(t_emb) if self.share_mod else t_emb
+
+    h_x = h_x + self.pos_embedder(self.pos_pe).to(d)
+
+    for i, block in enumerate(self.noise_refiner):
+        h_x = block(h_x, mod=t_mod, rotary_emb=self.noise_repo_layers[i](h_x))
+
+    for i, block in enumerate(self.context_refiner):
+        h_cond = block(
+            h_cond,
+            mod=None,
+            rotary_emb=self.context_repo_layers[i](h_cond),
+        )
+
+    cam = x_t.get("camera").to(d)
+    if tuple(cam.shape) != CAMERA_SHAPE:
+        raise ValueError(
+            f"Collapsed camera shape is {tuple(cam.shape)}, expected {CAMERA_SHAPE}"
+        )
+    h_cam = self.cam_refiner(cam)
+
+    h = torch.cat([h_x, h_cond], dim=1)
+    h = torch.cat([h, h_cam], dim=1)
+    expected_joint_shape = (BATCH_SIZE, LATENT_TOKENS + 2, int(self.model_channels))
+    if tuple(h.shape) != expected_joint_shape:
+        raise ValueError(
+            f"Collapsed joint shape is {tuple(h.shape)}, expected {expected_joint_shape}"
+        )
+
+    for i, block in enumerate(self.blocks):
+        h = block(h, mod=t_mod, rotary_emb=self.repo_layers[i](h))
+
+    h_x = functional.layer_norm(
+        h[:, : z.shape[1]].float(), h.shape[-1:]
+    ).type(d)
+    h_cam = functional.layer_norm(
+        h[:, -cam.shape[1] :].float(), h.shape[-1:]
+    ).type(d)
+
+    if self.use_shift_table:
+        shift, scale = (self.shift_table + t_emb.unsqueeze(1)).chunk(2, dim=1)
+        h_x = h_x * (1 + scale) + shift
+        h_cam = h_cam * (1 + scale) + shift
+
+    out = {"latent": self.out_layer(h_x)}
+    out["camera"] = self.cam_out_layer(h_cam)
+    if tuple(out["latent"].shape) != PRED_LATENT_SHAPE:
+        raise ValueError(
+            f"Collapsed latent output shape is {tuple(out['latent'].shape)}, expected "
+            f"{PRED_LATENT_SHAPE}"
+        )
+    if tuple(out["camera"].shape) != PRED_CAMERA_SHAPE:
+        raise ValueError(
+            f"Collapsed camera output shape is {tuple(out['camera'].shape)}, expected "
+            f"{PRED_CAMERA_SHAPE}"
+        )
+    return out
+
+
 def adapt_official_flow_for_onnx(
     torch: Any,
     model: Any,
     model_module: ModuleType,
     attention_query_chunk: int = 256,
+    collapsed_unconditional_context: bool = False,
     attention_head_chunk: int = 16,
     attention_head_padding: int = 0,
     qk_norm_padding_tokens: int = 1,
@@ -532,11 +705,14 @@ def adapt_official_flow_for_onnx(
        constant-folding of large trigonometric arguments from changing its values.
     3. SDPA is split on the independent query and head axes so WebGPU never
        allocates the full multi-gigabyte attention score tensor and never invokes
-       the known-corrupt 16-head ORT WebGPU kernel.
+       the known-corrupt 16-head ORT WebGPU kernel. When the unconditional-only
+       specialization is enabled, the official forward retains one context token
+       and collapsed self-attention restores the 4,101-key multiplicity exactly.
 
-    Validators must run the untouched official forward first, then this adapted
-    forward on identical tensors.  This function deliberately does not patch files
-    in the source checkout.
+    With ``collapsed_unconditional_context=False``, the official forward remains
+    untouched and SDPA retains the canonical functional path. Validators must run
+    the untouched official forward first, then this adapted forward on identical
+    tensors. This function deliberately does not patch files in the source checkout.
     """
 
     existing = getattr(model, "_triposplat_onnx_adapter_metadata", None)
@@ -545,6 +721,15 @@ def adapt_official_flow_for_onnx(
             raise ValueError(
                 "Flow model was already adapted with attention query chunk "
                 f"{existing.attention_query_chunk}, not {attention_query_chunk}"
+            )
+        if (
+            existing.collapsed_unconditional_context
+            != collapsed_unconditional_context
+        ):
+            raise ValueError(
+                "Flow model was already adapted with collapsed unconditional context "
+                f"{existing.collapsed_unconditional_context}, not "
+                f"{collapsed_unconditional_context}"
             )
         if existing.attention_head_chunk != attention_head_chunk:
             raise ValueError(
@@ -581,6 +766,8 @@ def adapt_official_flow_for_onnx(
 
     if not isinstance(attention_query_chunk, int) or attention_query_chunk <= 0:
         raise ValueError("attention_query_chunk must be a positive integer")
+    if not isinstance(collapsed_unconditional_context, bool):
+        raise TypeError("collapsed_unconditional_context must be a bool")
     if not isinstance(attention_head_chunk, int) or attention_head_chunk <= 0:
         raise ValueError("attention_head_chunk must be a positive integer")
     if not isinstance(attention_head_padding, int) or attention_head_padding < 0:
@@ -647,10 +834,13 @@ def adapt_official_flow_for_onnx(
             v=v,
             kv=kv,
             query_chunk_size=attention_query_chunk,
+            collapsed_unconditional_context=collapsed_unconditional_context,
             head_chunk_size=attention_head_chunk,
             head_padding_size=attention_head_padding,
         )
     )
+    if collapsed_unconditional_context:
+        model.forward = types.MethodType(_collapsed_unconditional_forward, model)
 
     # Core AI's TripoSplat conversion identified a true-scale failure in the
     # original F.normalize formulation: some converters/runtimes omit its eps
@@ -820,6 +1010,7 @@ def adapt_official_flow_for_onnx(
     metadata = AdapterMetadata(
         real_rope_modules=replaced,
         attention_query_chunk=attention_query_chunk,
+        collapsed_unconditional_context=collapsed_unconditional_context,
         attention_head_chunk=attention_head_chunk,
         attention_head_padding=attention_head_padding,
         qk_norm_padding_tokens=qk_norm_padding_tokens,
