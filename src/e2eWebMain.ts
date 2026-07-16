@@ -30,6 +30,14 @@ interface SelectedImage {
   hasAlpha: boolean
 }
 
+interface RunTelemetry {
+  startedAt: string
+  startedAtMs: number
+  activeFlowStage?: FlowStage
+  flowStageStartedAtMs: number
+  flowDurationsMs: Partial<Record<FlowStage, number>>
+}
+
 function requiredElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector)
   if (!element) throw new Error(`Required public runner element '${selector}' was not found.`)
@@ -54,6 +62,10 @@ const runStatus = requiredElement<HTMLElement>('#run-status')
 const progressTrack = requiredElement<HTMLElement>('.progress-track')
 const progressFill = requiredElement<HTMLElement>('#progress-fill')
 const generationFlow = requiredElement<HTMLOListElement>('#generation-flow')
+const benchmarkReport = requiredElement<HTMLElement>('#benchmark-report')
+const benchmarkSummary = requiredElement<HTMLElement>('#benchmark-summary')
+const benchmarkDetails = requiredElement<HTMLElement>('#benchmark-details')
+const copyBenchmarkButton = requiredElement<HTMLButtonElement>('#copy-benchmark')
 const diagnostics = requiredElement<HTMLElement>('#diagnostics')
 const diagnosticMessage = requiredElement<HTMLElement>('#diagnostic-message')
 const diagnosticDetails = requiredElement<HTMLElement>('#diagnostic-details')
@@ -79,6 +91,8 @@ let activePlyUrl: string | undefined
 let downloadablePly: Blob | undefined
 let downloadableSplat: Blob | undefined
 let previewGenerationKey = 0
+let activeRunTelemetry: RunTelemetry | undefined
+let benchmarkReportText = ''
 const retiredPlyUrls = new Set<string>()
 
 function formatBytes(bytes: number): string {
@@ -86,6 +100,130 @@ function formatBytes(bytes: number): string {
   if (bytes < 1_024 ** 2) return `${(bytes / 1_024).toFixed(1)} KiB`
   if (bytes < 1_024 ** 3) return `${(bytes / 1_024 ** 2).toFixed(1)} MiB`
   return `${(bytes / 1_024 ** 3).toFixed(2)} GiB`
+}
+
+function formatDuration(milliseconds: number): string {
+  if (milliseconds < 1_000) return `${Math.round(milliseconds)} ms`
+  const seconds = milliseconds / 1_000
+  if (seconds < 60) return `${seconds.toFixed(2)} s`
+  return `${Math.floor(seconds / 60)}m ${(seconds % 60).toFixed(1)}s`
+}
+
+function compactStatus(message: string): string {
+  return message.length > 72 ? `${message.slice(0, 69)}…` : message
+}
+
+function startRunTelemetry(): void {
+  const startedAtMs = performance.now()
+  activeRunTelemetry = {
+    startedAt: new Date().toISOString(),
+    startedAtMs,
+    flowStageStartedAtMs: startedAtMs,
+    flowDurationsMs: {},
+  }
+}
+
+function recordFlowStage(flowStage: FlowStage | undefined): void {
+  if (!activeRunTelemetry || !flowStage || activeRunTelemetry.activeFlowStage === flowStage) return
+  const now = performance.now()
+  if (activeRunTelemetry.activeFlowStage) {
+    const previous = activeRunTelemetry.activeFlowStage
+    activeRunTelemetry.flowDurationsMs[previous] = (activeRunTelemetry.flowDurationsMs[previous] ?? 0)
+      + now - activeRunTelemetry.flowStageStartedAtMs
+  }
+  activeRunTelemetry.activeFlowStage = flowStage
+  activeRunTelemetry.flowStageStartedAtMs = now
+}
+
+function finishRunTelemetry(): RunTelemetry | undefined {
+  if (!activeRunTelemetry) return undefined
+  const completed = activeRunTelemetry
+  if (completed.activeFlowStage) {
+    completed.flowDurationsMs[completed.activeFlowStage] = (completed.flowDurationsMs[completed.activeFlowStage] ?? 0)
+      + performance.now() - completed.flowStageStartedAtMs
+  }
+  activeRunTelemetry = undefined
+  return completed
+}
+
+function numericTimingEntries(value: unknown): Array<[string, number]> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return []
+  return Object.entries(value).flatMap(([name, timing]) => typeof timing === 'number' ? [[name, timing]] : [])
+}
+
+function buildBenchmarkReport(
+  telemetry: RunTelemetry,
+  scene: { count: number; metadata: { generationSettings: Readonly<Record<string, unknown>>; seed: number; modelRevision: string } },
+  base: string,
+): string {
+  const totalDuration = performance.now() - telemetry.startedAtMs
+  const settings = scene.metadata.generationSettings
+  const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
+  const lines = [
+    'TripoSplat WebGPU benchmark',
+    `Completed (UTC): ${new Date().toISOString()}`,
+    `Started (UTC): ${telemetry.startedAt}`,
+    `End-to-end duration: ${formatDuration(totalDuration)}`,
+    '',
+    'Environment',
+    `Browser: ${compatibility?.browser ?? navigator.userAgent}`,
+    `WebGPU adapter: ${compatibility?.adapterName ?? 'not exposed by this browser'}`,
+    `Logical CPU cores: ${navigator.hardwareConcurrency || 'not exposed'}`,
+    `Device memory hint: ${deviceMemory ? `${deviceMemory} GiB` : 'not exposed'}`,
+    `Cache backend: ${cacheBackend}`,
+    `Model revision: ${scene.metadata.modelRevision}`,
+    `Model base: ${base}`,
+    '',
+    'Input and output',
+    `Image: ${selectedImage?.name ?? 'unknown'} · ${selectedImage ? `${selectedImage.width}×${selectedImage.height}` : 'unknown size'} · ${selectedImage?.hasAlpha ? 'alpha' : 'opaque'}`,
+    `Gaussians: ${scene.count.toLocaleString()}`,
+    `Steps: ${String(settings.steps ?? DEFAULT_STEPS)} · seed ${scene.metadata.seed} · precision ${String(settings.precision ?? 'unknown')}`,
+    '',
+    'Pipeline wall time',
+    ...flowOrder.flatMap((stage) => {
+      const duration = telemetry.flowDurationsMs[stage]
+      return duration === undefined ? [] : [`${stage}: ${formatDuration(duration)}`]
+    }),
+  ]
+  const runtimeTimings = numericTimingEntries(settings.measuredTimingsMs)
+  if (runtimeTimings.length) {
+    lines.push('', 'Runtime timings reported by the model')
+    lines.push(...runtimeTimings.map(([name, milliseconds]) => `${name}: ${formatDuration(milliseconds)}`))
+  }
+  const limits = compatibility ? Object.entries(compatibility.limits) : []
+  if (limits.length) {
+    lines.push('', 'Selected WebGPU limits')
+    lines.push(...limits.map(([name, value]) => `${name}: ${value.toLocaleString()}`))
+  }
+  return lines.join('\n')
+}
+
+function showBenchmarkReport(report: string, totalDuration: number): void {
+  benchmarkReportText = report
+  benchmarkReport.hidden = false
+  benchmarkSummary.textContent = `Completed in ${formatDuration(totalDuration)}. Copy this report when sharing a benchmark result.`
+  benchmarkDetails.textContent = report
+  copyBenchmarkButton.disabled = false
+  copyBenchmarkButton.textContent = 'Copy report'
+}
+
+async function copyBenchmarkReport(): Promise<void> {
+  if (!benchmarkReportText) return
+  try {
+    await navigator.clipboard.writeText(benchmarkReportText)
+  } catch {
+    const textarea = document.createElement('textarea')
+    textarea.value = benchmarkReportText
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    const copied = document.execCommand('copy')
+    textarea.remove()
+    if (!copied) throw new Error('The browser denied clipboard access.')
+  }
+  copyBenchmarkButton.textContent = 'Copied'
+  benchmarkSummary.textContent = 'Benchmark report copied to your clipboard.'
 }
 
 function chooseCacheBackend(): CacheBackend {
@@ -116,13 +254,15 @@ function stageToFlowStage(stage: string): FlowStage | undefined {
   return undefined
 }
 
-function setFlowStage(activeStage: FlowStage): void {
+function setFlowStage(activeStage: FlowStage, detail?: string): void {
   const activeIndex = flowOrder.indexOf(activeStage)
   for (const item of flowItems) {
     const itemStage = item.dataset.flowStage as FlowStage | undefined
     const itemIndex = itemStage ? flowOrder.indexOf(itemStage) : -1
     const state = itemIndex < activeIndex ? 'complete' : itemIndex === activeIndex ? 'active' : 'waiting'
     item.dataset.state = state
+    const status = item.querySelector('small')
+    if (status) status.textContent = state === 'active' ? `RUNNING · ${compactStatus(detail ?? 'Working locally')}` : state === 'complete' ? 'COMPLETE' : 'WAITING'
     if (state === 'active') item.setAttribute('aria-current', 'step')
     else item.removeAttribute('aria-current')
   }
@@ -141,7 +281,10 @@ function setRunStatus(stage: string, message: string, progress?: number): void {
   progressTrack.setAttribute('aria-valuenow', String(Math.round(percent)))
   progressTrack.setAttribute('aria-valuetext', `${stage}: ${message}`)
   const flowStage = stageToFlowStage(stage)
-  if (flowStage) setFlowStage(flowStage)
+  if (flowStage) {
+    recordFlowStage(flowStage)
+    setFlowStage(flowStage, message)
+  }
 }
 
 function setBusy(next: boolean): void {
@@ -436,7 +579,9 @@ async function run(): Promise<void> {
   hideDiagnostics()
   controller?.abort()
   controller = new AbortController()
+  startRunTelemetry()
   setBusy(true)
+  setRunStatus('SOURCE IMAGE', 'Image accepted. Starting a local, browser-only generation…')
   setPreviewRunState(
     activePlyUrl ? 'retained' : 'working',
     activePlyUrl
@@ -463,6 +608,8 @@ async function run(): Promise<void> {
       setPreviewRunState('working', 'Swapping in the completed scene without resetting the page…')
       replaceOutput(ply, splat)
       setRunStatus('COMPLETE', `Generated ${scene.count.toLocaleString()} Gaussians. Preview and downloads are ready.`, 1)
+      const telemetry = finishRunTelemetry()
+      if (telemetry) showBenchmarkReport(buildBenchmarkReport(telemetry, scene, base), performance.now() - telemetry.startedAtMs)
       await refreshCacheStatus()
       completed = true
     } finally {
@@ -475,6 +622,7 @@ async function run(): Promise<void> {
   } finally {
     if (controller?.signal.aborted) setRunStatus('CANCELLED', 'Cancelled. The next run will start a clean worker.')
     if (!completed) {
+      finishRunTelemetry()
       setPreviewRunState(
         activePlyUrl ? 'retained' : 'failed',
         activePlyUrl ? 'The last completed scene is still available.' : 'No completed scene was produced. Review the guidance below and try again.',
@@ -555,6 +703,12 @@ clearCacheButton.addEventListener('click', () => {
 })
 downloadPlyButton.addEventListener('click', () => download(downloadablePly, 'triposplat-scene.ply'))
 downloadSplatButton.addEventListener('click', () => download(downloadableSplat, 'triposplat-scene.splat'))
+copyBenchmarkButton.addEventListener('click', () => {
+  void copyBenchmarkReport().catch((error) => {
+    const friendly = friendlyError(error)
+    benchmarkSummary.textContent = `Could not copy the report: ${friendly.message}`
+  })
+})
 
 void checkPlatform()
 window.addEventListener('pagehide', () => {

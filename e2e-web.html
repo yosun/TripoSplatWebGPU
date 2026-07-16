@@ -23,7 +23,7 @@
         <div class="eyebrow"><span>Image to 3D Model. </span></div>
         <h1><em>Offline. Local. Portable.</em></h1>
         <p>Your browser uses WebGPU to run the full TripoSplat model locally.<br />
-The model downloads once (≈6.47 GB), verifies itself, and stays stored in offline browser storage.<br />
+The model downloads once (≈7GB), verifies itself, and stays stored in offline browser storage.<br />
 After that, generation is instant — even with no internet connection.</p>
       </header>
       <section class="compatibility-panel" aria-labelledby="compatibility-heading">
@@ -66,6 +66,11 @@ After that, generation is instant — even with no internet connection.</p>
             <li data-flow-stage="decode" data-state="waiting"><span class="flow-marker">05</span><div><strong>Spatial decode</strong><span>Octree occupancy → Gaussian decoder.</span></div><small>WAITING</small></li>
             <li data-flow-stage="preview" data-state="waiting"><span class="flow-marker">06</span><div><strong>Scene handoff</strong><span>Encode PLY / .splat and swap the viewer.</span></div><small>WAITING</small></li>
           </ol>
+        </section>
+        <section id="benchmark-report" class="benchmark-report" aria-labelledby="benchmark-heading" hidden>
+          <div class="flow-heading"><div><span class="section-index">RUN REPORT</span><h3 id="benchmark-heading">Copyable benchmark summary</h3></div><button id="copy-benchmark" type="button" disabled>Copy report</button></div>
+          <p id="benchmark-summary" class="benchmark-summary" role="status" aria-live="polite">Complete a generation to capture its timing and browser environment.</p>
+          <pre id="benchmark-details" class="benchmark-details" tabindex="0"></pre>
         </section>
         <div class="secondary-actions"><button id="cancel" type="button" disabled>Cancel current operation</button><button id="clear-cache" type="button">Clear cached model files</button></div>
         <div id="diagnostics" class="diagnostics" hidden><p id="diagnostic-message"></p><details><summary>Technical details</summary><pre id="diagnostic-details"></pre></details></div>
