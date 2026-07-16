@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/src/e2e-web.css" />
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to generator</a>
     <div class="ambient ambient-one" aria-hidden="true"></div>
     <div class="ambient ambient-two" aria-hidden="true"></div>
     <nav class="topbar" aria-label="Primary navigation">
@@ -18,13 +19,14 @@
       </a>
       <span class="capability" id="platform-badge"><i></i><span>Checking platform</span></span>
     </nav>
-    <main class="app-shell web-app">
+    <main id="main-content" class="app-shell web-app">
       <header class="web-hero">
         <div class="eyebrow"><span>Image to 3D Model. </span></div>
         <h1><em>Offline. Local. Portable.</em></h1>
         <p>Your browser uses WebGPU to run the full TripoSplat model locally.<br />
-The model downloads once (≈7GB), verifies itself, and stays stored in offline browser storage.<br />
-After that, generation is instant — even with no internet connection.</p>
+The ≈6.5 GB model package downloads once, verifies, and stays in offline browser storage.<br />
+After that, it is ready to run again without another model download.</p>
+        <div class="hero-actions"><a class="github-link" href="#source-heading">Try it out <span aria-hidden="true">↘</span></a><a class="hero-text-link" href="#browser-experiment">Why this matters <span aria-hidden="true">↓</span></a></div>
       </header>
       <section class="compatibility-panel" aria-labelledby="compatibility-heading">
         <div><span class="section-index">SYSTEM CHECK</span><h2 id="compatibility-heading">Preparing your browser</h2></div>
@@ -36,10 +38,16 @@ After that, generation is instant — even with no internet connection.</p>
           <p class="panel-copy">Use an alpha-bearing PNG or WebP for best results. Transparent background tells the model what to turn into a scene.</p>
           <input id="image-file" type="file" accept="image/png,image/webp,image/jpeg,image/avif" hidden />
           <button id="choose-file" class="file-picker" type="button"><span>Choose image from your computer</span><b>Browse</b></button>
-          <label class="url-label" for="image-url"><span>Or start from an image URL</span><small>The image host must allow browser CORS access.</small></label>
-          <div class="url-row"><input id="image-url" type="url" inputmode="url" placeholder="https://example.com/object.png" autocomplete="url" /><button id="load-image-url" type="button">Use URL</button></div>
+          <label class="url-label" for="image-url"><span>Or start from an image URL</span><small id="image-url-help">The image host must allow browser CORS access.</small></label>
+          <div class="url-row"><input id="image-url" type="url" inputmode="url" placeholder="https://example.com/object.png" autocomplete="url" aria-describedby="image-url-help image-url-error" /><button id="load-image-url" type="button">Use URL</button></div>
+          <div id="image-url-error" class="image-url-error" role="alert" hidden></div>
+          <figure id="image-preview" class="image-preview" hidden>
+            <img id="image-preview-image" alt="Selected source image preview" />
+            <figcaption>Loaded source image</figcaption>
+          </figure>
           <div id="image-summary" class="image-summary" data-state="empty" aria-live="polite">No image selected yet.</div>
           <button id="drop-zone" class="drop-zone" type="button">Or drag an image here</button>
+          <a class="continue-to-engine" href="#model-heading">Continue to browser engine <span aria-hidden="true">↓</span></a>
         </section>
         <section class="preview-panel-web panel" aria-labelledby="scene-heading">
           <div class="panel-heading"><div><span class="section-index">STEP 3 / RESULT</span><h2 id="scene-heading">Your spatial scene</h2></div><span id="viewer-state" class="viewer-state">Waiting</span></div>
@@ -55,9 +63,10 @@ After that, generation is instant — even with no internet connection.</p>
         <div class="model-layout"><div id="model-status" class="model-status" aria-live="polite">Checking model and browser storage…</div></div>
         <details class="model-advanced"><summary>Use a different model server</summary><label for="model-base"><span>Model CDN directory</span><small>Must contain manifest.json and allow CORS requests from this site.</small><input id="model-base" type="url" inputmode="url" autocomplete="url" spellcheck="false" /></label></details>
         <button id="generate" class="primary-action" type="button" disabled><span>Choose an image to begin</span><b aria-hidden="true">↗</b></button>
-        <div class="run-feedback"><small id="run-stage">STATUS</small><p id="run-status" role="status" aria-live="polite">Checking browser compatibility…</p><div class="progress-track" role="progressbar" aria-label="Generation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div></div>
+        <div class="run-feedback"><small id="run-stage">STATUS</small><p id="run-status" aria-describedby="run-stage">Checking browser compatibility…</p><span id="run-announcement" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></span><div class="progress-track" role="progressbar" aria-label="Generation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div></div>
         <section class="generation-flow" aria-labelledby="generation-flow-heading">
-          <div class="flow-heading"><span class="section-index">ENGINEERING PIPELINE</span><h3 id="generation-flow-heading">What this browser is doing</h3></div>
+          <div class="flow-heading"><div><span class="section-index">ENGINEERING PIPELINE</span><h3 id="generation-flow-heading">What this browser is doing</h3></div><div class="progress-detail-switch" role="group" aria-label="Progress detail level"><button type="button" data-progress-detail="guided" aria-pressed="false">Guided</button><button type="button" data-progress-detail="technical" aria-pressed="true">Technical</button></div></div>
+          <p id="progress-detail-description" class="progress-detail-description">Technical mode shows exact graph stages, sampler steps, CFG invocations, and decode boundaries as they happen.</p>
           <ol id="generation-flow" class="flow-steps">
             <li data-flow-stage="source" data-state="active" aria-current="step"><span class="flow-marker">01</span><div><strong>Source image</strong><span>Inspect alpha and prepare local pixels.</span></div><small>READY</small></li>
             <li data-flow-stage="model" data-state="waiting"><span class="flow-marker">02</span><div><strong>Model package</strong><span>Verify manifest, integrity, and browser cache.</span></div><small>WAITING</small></li>
@@ -74,10 +83,14 @@ After that, generation is instant — even with no internet connection.</p>
         </section>
         <div class="secondary-actions"><button id="cancel" type="button" disabled>Cancel current operation</button><button id="clear-cache" type="button">Clear cached model files</button></div>
         <div id="diagnostics" class="diagnostics" hidden><p id="diagnostic-message"></p><details><summary>Technical details</summary><pre id="diagnostic-details"></pre></details></div>
-        <p class="privacy-note">Your image stays on this device. Only the manifest and browser-runtime model artifacts are requested from the official Hugging Face package unless you explicitly choose a different server. Opaque photos currently need a browser-local background remover; use a transparent PNG or WebP.</p>
+        <p class="privacy-note">Your image stays on this device. Only the manifest and browser-runtime model artifacts are requested from the official <a href="https://huggingface.co/Yosun/TripoSplat-WebGPU/">Hugging Face package</a> unless you explicitly choose a different server. Opaque photos currently need a browser-local background remover; use a transparent PNG or WebP.</p>
+      </section>
+      <section id="browser-experiment" class="experiment-panel panel" aria-labelledby="experiment-heading">
+        <div class="experiment-intro"><span class="section-index">WHY THIS MATTERS</span><h2 id="experiment-heading">A monumental attempt to put CUDA-era 3D generation in reach of more people.</h2></div>
+        <div class="experiment-copy"><p>TripoSplat started as a CUDA-based 3D generation pipeline. With Codex GPT 5.6 Sol Ultra and GPT 5.6 Sol Max in Kiro, this project is porting that work to WebGPU—replacing the usual requirements for NVIDIA hardware, CUDA, terminal commands, environment setup, and local dependency installation with a browser-native workflow.</p><p>The goal is not a cosmetic port. It is an attempt to make advanced AI 3D generation radically more accessible: for GPUPoor MacBook users, students, independent developers, and anyone without an expensive GPU. When a browser passes the system check, they can generate a 3D asset locally on hardware they already own—no terminal, no installation, and no cloud GPU bill for inference.</p><p>This is still an engineering preview, with compatibility and quality under active qualification. But the direction is clear: keep powerful spatial-generation tools inspectable, local, and available to more builders.</p><a class="github-link" href="https://github.com/yosun/TripoSplatWebGPU" target="_blank" rel="noreferrer">Read the source, benchmarks, and open issues on GitHub <span aria-hidden="true">↗</span></a></div>
       </section>
     </main>
-    <footer><span>TRIPOSPLAT WEBGPU · ENGINEERING PREVIEW</span><a href="/e2e-lab.html">Qualification lab</a><a href="/sharp-lab.html">Legacy SHARP lab</a></footer>
+    <footer><span>TRIPOSPLAT WEBGPU · ENGINEERING PREVIEW</span><a href="#source-heading">Try it out</a><a href="https://github.com/yosun/TripoSplatWebGPU" target="_blank" rel="noreferrer">View source on GitHub <span aria-hidden="true">↗</span></a><a href="/e2e-lab.html">Qualification lab</a><a href="/sharp-lab.html">Legacy SHARP lab</a></footer>
     <script type="module" src="/src/e2eWebMain.ts"></script>
   </body>
 </html>

@@ -21,6 +21,10 @@
 .url-label small { color: #6f778b; font: .58rem/1.4 var(--mono); }
 .url-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 9px; }
 .url-row button { padding-inline: 13px; font: .61rem var(--mono); text-transform: uppercase; }
+.image-preview { display: grid; gap: 8px; margin: 15px 0 0; padding: 10px; border: 1px solid var(--line); background: repeating-conic-gradient(#161b27 0 25%, #0f131d 0 50%) 50% / 16px 16px; }
+.image-preview[hidden] { display: none; }
+.image-preview img { display: block; width: 100%; max-height: 280px; border: 1px solid rgba(255,255,255,.11); object-fit: contain; background: #080b11; }
+.image-preview figcaption { color: #aab3c3; font: .55rem var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .image-summary { min-height: 59px; margin-top: 15px; padding: 13px; border-left: 1px solid var(--line-bright); color: var(--muted); background: rgba(0,0,0,.18); font: .62rem/1.6 var(--mono); }
 .image-summary[data-state="ready"] { border-color: var(--lime); color: #cbd2df; }
 .image-summary[data-state="warning"] { border-color: #ffca71; color: #ffd18a; }
@@ -104,3 +108,53 @@
 .benchmark-summary { margin: 14px 0 0; color: #c4ccda; font: .65rem/1.55 var(--mono); }
 .benchmark-details { max-height: 300px; margin: 12px 0 0; padding: 13px; overflow: auto; border: 1px solid var(--line); color: #aab5c7; background: rgba(0,0,0,.22); font: .6rem/1.6 var(--mono); white-space: pre-wrap; }
 @media (max-width: 460px) { .benchmark-report .flow-heading { display: flex; justify-content: space-between; } }
+
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 23px; }
+.github-link, .hero-text-link { display: inline-flex; align-items: center; gap: 7px; min-height: 37px; padding: 0 12px; border: 1px solid var(--line-bright); color: #dce4f2; font: .59rem var(--mono); letter-spacing: .04em; text-decoration: none; text-transform: uppercase; }
+.github-link { border-color: rgba(198,255,74,.42); color: var(--lime); background: rgba(198,255,74,.04); }
+.github-link:hover, .github-link:focus-visible { border-color: var(--lime); background: rgba(198,255,74,.1); }
+.hero-text-link:hover, .hero-text-link:focus-visible { border-color: var(--cyan); color: var(--cyan); }
+.experiment-panel { display: grid; grid-template-columns: minmax(230px, .7fr) minmax(0, 1.3fr); gap: clamp(28px, 5vw, 76px); margin-top: 14px; padding: clamp(26px, 4vw, 52px); border-color: rgba(88,230,255,.26); background: linear-gradient(118deg, rgba(88,230,255,.065), rgba(198,255,74,.035)); }
+.experiment-intro h2 { max-width: 510px; margin: 10px 0 0; color: #ecf1fb; font-size: clamp(1.45rem, 2.8vw, 2.55rem); font-weight: 500; letter-spacing: -.045em; line-height: 1.06; }
+.experiment-copy { display: grid; align-content: start; gap: 17px; }
+.experiment-copy p { max-width: 720px; margin: 0; color: #b7c0d1; font-size: .89rem; line-height: 1.78; }
+.experiment-copy .github-link { justify-self: start; margin-top: 5px; }
+@media (max-width: 760px) { .experiment-panel { grid-template-columns: 1fr; gap: 23px; } }
+@media (max-width: 460px) { .hero-actions { display: grid; } .github-link, .hero-text-link { justify-content: space-between; } }
+
+/* Readability and keyboard-navigation refinements. */
+.skip-link { position: fixed; z-index: 20; top: 10px; left: 10px; padding: 11px 14px; transform: translateY(-160%); border: 1px solid var(--cyan); color: #061014; background: var(--cyan); font: .75rem var(--mono); text-decoration: none; transition: transform .18s ease; }
+.skip-link:focus { transform: translateY(0); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+:where(a, summary, [tabindex]):focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.continue-to-engine { display: flex; min-height: 44px; align-items: center; justify-content: space-between; margin-top: 10px; padding: 0 12px; border: 1px solid rgba(88,230,255,.28); color: var(--cyan); font: .72rem var(--mono); letter-spacing: .035em; text-decoration: none; text-transform: uppercase; }
+.continue-to-engine:hover { border-color: var(--cyan); background: rgba(88,230,255,.06); }
+.compatibility-panel li { font-size: .72rem; }
+.url-label small, .model-panel label small, .model-panel .model-advanced label small { font-size: .68rem; }
+.image-preview figcaption, .viewer-state, .model-panel .model-advanced summary, .run-feedback small { font-size: .67rem; }
+.drop-zone, .download-row button, .secondary-actions button { font-size: .72rem; }
+.drop-zone { min-height: 44px; color: #9da8ba; }
+.model-status { font-size: .72rem; }
+.run-feedback p { font-size: .76rem; }
+.preview-run-state, .benchmark-summary { font-size: .7rem; }
+.flow-steps strong { font-size: .69rem; }
+.flow-steps span:not(.flow-marker) { font-size: .66rem; }
+.flow-marker, .flow-steps small { color: #8b95a8; font-size: .64rem; }
+.secondary-actions button { min-height: 40px; color: #b5bece; }
+.benchmark-report button, .github-link, .hero-text-link { min-height: 42px; font-size: .67rem; }
+@media (max-width: 620px) { .secondary-actions { flex-direction: column; gap: 4px; } .secondary-actions button { min-height: 44px; justify-content: flex-start; } }
+@media (prefers-reduced-motion: reduce) { .skip-link, .progress-track span { transition: none; } }
+
+.progress-detail-switch { display: inline-flex; flex: 0 0 auto; padding: 3px; border: 1px solid var(--line-bright); background: rgba(0,0,0,.2); }
+.progress-detail-switch button { min-height: 34px; padding: 0 11px; border: 0; color: #aeb8c9; background: transparent; font: .66rem var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+.progress-detail-switch button[aria-pressed="true"] { color: #09100d; background: var(--lime); }
+.progress-detail-switch button:hover:not([aria-pressed="true"]) { color: var(--cyan); background: rgba(88,230,255,.07); transform: none; }
+.progress-detail-description { max-width: 740px; margin: 12px 0 0; color: #aab4c6; font: .7rem/1.6 var(--mono); }
+@media (max-width: 620px) { .generation-flow .flow-heading { display: grid; align-items: start; } .progress-detail-switch { width: 100%; } .progress-detail-switch button { flex: 1; min-height: 42px; } }
+
+.image-url-error { margin-top: 9px; padding: 11px 12px; border-left: 2px solid var(--danger); color: #ffc0cf; background: rgba(100,18,42,.24); font: .72rem/1.55 var(--mono); }
+.image-url-error[hidden] { display: none; }
+.image-url-error a { color: #ffd1dc; }
+
+/* Keep pointer gestures inside the static viewer instead of competing with page touch gestures. */
+#web-preview-root .splat-canvas-host { touch-action: none; }

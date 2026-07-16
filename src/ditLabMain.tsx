@@ -133,12 +133,16 @@ async function contentLength(url: string): Promise<number | undefined> {
   }
 }
 
+function initialUrl(parameter: string, fallback: string): string {
+  return new URLSearchParams(window.location.search).get(parameter) ?? fallback
+}
+
 export function DitLab() {
   const clientRef = useRef<OrtWorkerClient | null>(null)
   const autoRunStartedRef = useRef(false)
   const runRef = useRef<() => Promise<void>>(async () => undefined)
-  const [modelUrl, setModelUrl] = useState(DEFAULT_MODEL)
-  const [fixtureUrl, setFixtureUrl] = useState(DEFAULT_FIXTURE)
+  const [modelUrl, setModelUrl] = useState(() => initialUrl('model', DEFAULT_MODEL))
+  const [fixtureUrl, setFixtureUrl] = useState(() => initialUrl('fixture', DEFAULT_FIXTURE))
   const [status, setStatus] = useState('Ready to validate one official DiT invocation.')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)

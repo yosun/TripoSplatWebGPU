@@ -4,6 +4,14 @@
 
 An in-progress browser-local WebGPU port of [TripoSplat](https://github.com/VAST-AI-Research/TripoSplat), built from the [ml-sharp-web](https://github.com/bring-shrubbery/ml-sharp-web) application chassis. The official TripoSplat PyTorch implementation is the numerical source of truth. The existing SHARP path remains available as a known-good browser inference baseline.
 
+## The experiment
+
+This is a genuinely ambitious attempt to port a CUDA-based AI 3D-generation pipeline to browser-native WebGPU. The project uses Codex GPT 5.6 Sol Ultra and GPT 5.6 Sol Max in Kiro as implementation collaborators to replace the traditional NVIDIA/CUDA stack, terminal workflow, environment setup, and local dependency installation with a local browser experience.
+
+The aim is to make advanced AI 3D generation more accessible to GPU-poor MacBook users, students, independent developers, and anyone without an expensive GPU. If a device passes the browser compatibility check, it can generate an asset locally on its existing hardware—without a terminal, an installation, or a cloud GPU bill for inference. This remains an engineering preview: support, memory behavior, and numerical quality are still under qualification.
+
+**[View the source, benchmarks, and issue tracker on GitHub →](https://github.com/yosun/TripoSplatWebGPU)**
+
 ## Web runner
 
 **[Launch the TripoSplat WebGPU image-to-spatial-scene runner →](https://triposplat-webgpu.vercel.app/e2e-web)**
@@ -172,7 +180,7 @@ TripoSplat WebGPU was directed, developed, tested, and validated by
 
 [Yosun Chang](https://github.com/yosun), with substantial implementation
 
-assistance from OpenAI Codex using GPT-5.6 Ultra.
+assistance from OpenAI Codex using GPT-5.6 Sol Ultra and GPT-5.6 Sol Max in Kiro.
 
 The repository began from the `ml-sharp-web` application chassis, whose
 

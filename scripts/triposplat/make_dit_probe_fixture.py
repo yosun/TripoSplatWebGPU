@@ -30,9 +30,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-fixture-dir", type=Path, required=True)
     parser.add_argument(
         "--probe-set",
-        choices=("blocks", "noise0"),
+        choices=("blocks", "noise0", "context0"),
         default="blocks",
-        help="Block progression or detailed first noise-refiner probes (default: %(default)s).",
+        help=(
+            "Block progression, detailed first noise-refiner probes, or bounded "
+            "first context-refiner attention probes (default: %(default)s)."
+        ),
     )
     parser.add_argument(
         "--inline-node-prefix",
@@ -70,6 +73,96 @@ def probe_sources(
     shapes: dict[str, list[int]],
 ) -> list[tuple[str, str, list[int] | None]]:
     vector = [1, 4, 16]
+    if probe_set == "context0":
+        context_vector = [1, 4, 1024]
+        attention_rows = [1, 16, 4, 4101]
+        return [
+            (
+                "context0_block_input",
+                "/flow_model/context_refiner.0/norm1/Cast_output_0",
+                context_vector,
+            ),
+            (
+                "context0_attention_input",
+                "/flow_model/context_refiner.0/norm1/Cast_1_output_0",
+                context_vector,
+            ),
+            (
+                "context0_qkv",
+                "/flow_model/context_refiner.0/attn/Reshape_output_0",
+                None,
+            ),
+            (
+                "context0_q_after_rope",
+                "/flow_model/context_refiner.0/attn/Reshape_2_output_0",
+                None,
+            ),
+            (
+                "context0_k_after_rope",
+                "/flow_model/context_refiner.0/attn/Reshape_4_output_0",
+                None,
+            ),
+            (
+                "context0_v",
+                "/flow_model/context_refiner.0/attn/Squeeze_2_output_0",
+                None,
+            ),
+            (
+                "context0_q_normalized",
+                "/flow_model/context_refiner.0/attn/q_norm/Slice_1_output_0",
+                None,
+            ),
+            (
+                "context0_k_normalized",
+                "/flow_model/context_refiner.0/attn/k_norm/Slice_1_output_0",
+                None,
+            ),
+            (
+                "context0_q_transposed",
+                "/flow_model/context_refiner.0/attn/Transpose_output_0",
+                attention_rows[:-1] + [64],
+            ),
+            (
+                "context0_k_transposed",
+                "/flow_model/context_refiner.0/attn/Transpose_1_output_0",
+                [1, 16, 4101, 64],
+            ),
+            (
+                "context0_v_transposed",
+                "/flow_model/context_refiner.0/attn/Transpose_2_output_0",
+                [1, 16, 4101, 64],
+            ),
+            (
+                "context0_scaled_logits_rows",
+                "/flow_model/context_refiner.0/attn/MatMul_output_0",
+                attention_rows,
+            ),
+            (
+                "context0_probabilities_rows",
+                "/flow_model/context_refiner.0/attn/Softmax_output_0",
+                attention_rows,
+            ),
+            (
+                "context0_weighted_value_rows",
+                "/flow_model/context_refiner.0/attn/MatMul_1_output_0",
+                [1, 16, 4, 64],
+            ),
+            (
+                "context0_pre_projection",
+                "/flow_model/context_refiner.0/attn/Reshape_5_output_0",
+                context_vector,
+            ),
+            (
+                "context0_post_projection",
+                "/flow_model/context_refiner.0/attn/out/Reshape_output_0",
+                context_vector,
+            ),
+            (
+                "context0_residual",
+                "/flow_model/context_refiner.0/Add_output_0",
+                context_vector,
+            ),
+        ]
     if probe_set == "noise0":
         attention = [1, 2, 4, 8]
         full_attention_candidates = [

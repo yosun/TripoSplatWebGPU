@@ -25,6 +25,8 @@ interface SplatPreviewProps {
   fov: number
   autoRotate: boolean
   maxScreenSize: number
+  /** Use static-scene rendering when the displayed result will not be transformed live. */
+  dynamicScene?: boolean
   splatPosition: [number, number, number]
   splatRotation: [number, number, number]
   splatFlip: [boolean, boolean, boolean]
@@ -45,6 +47,7 @@ export function SplatPreview({
   fov,
   autoRotate,
   maxScreenSize,
+  dynamicScene = true,
   splatPosition,
   splatRotation,
   splatFlip,
@@ -108,7 +111,7 @@ export function SplatPreview({
           ignoreDevicePixelRatio: false,
           inMemoryCompressionLevel: 0,
           maxScreenSpaceSplatSize: maxScreenSize,
-          dynamicScene: true,
+          dynamicScene,
         }
         if (initialCameraPosition) viewerOptions.initialCameraPosition = initialCameraPosition
         if (initialCameraTarget) viewerOptions.initialCameraLookAt = initialCameraTarget
@@ -142,7 +145,9 @@ export function SplatPreview({
           rotation: splatRotationRef.current,
           flip: splatFlipRef.current,
         })
-        attachCameraReporter(localViewer, () => onCameraChangeRef.current)
+        if (onCameraChangeRef.current) {
+          attachCameraReporter(localViewer, () => onCameraChangeRef.current)
+        }
 
         publishStatus('ready', 'Preview ready. Drag to orbit, scroll to zoom.')
       } catch (error) {
@@ -173,10 +178,10 @@ export function SplatPreview({
         notifyDisposed()
       }
     }
-    // maxScreenSize is in deps because it's a constructor option that can't be
-    // updated live; changing it forces a viewer recreate.
+    // maxScreenSize and dynamicScene are constructor options; changing either
+    // requires a viewer recreate.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plyUrl, generationKey, maxScreenSize])
+  }, [plyUrl, generationKey, maxScreenSize, dynamicScene])
 
   useEffect(() => {
     const viewer = viewerRef.current

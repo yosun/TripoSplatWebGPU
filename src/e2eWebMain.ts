@@ -20,6 +20,13 @@ const DEFAULT_MODEL_BASE = 'https://huggingface.co/Yosun/TripoSplat-WebGPU/resol
 const DEFAULT_STEPS = 20
 
 type FlowStage = 'source' | 'model' | 'conditioning' | 'sampling' | 'decode' | 'preview'
+type ProgressDetailMode = 'guided' | 'technical'
+
+interface RunStatusSnapshot {
+  stage: string
+  message: string
+  progress?: number
+}
 
 interface SelectedImage {
   blob: Blob
@@ -38,6 +45,11 @@ interface RunTelemetry {
   flowDurationsMs: Partial<Record<FlowStage, number>>
 }
 
+interface PreviewFrame {
+  position: [number, number, number]
+  target: [number, number, number]
+}
+
 function requiredElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector)
   if (!element) throw new Error(`Required public runner element '${selector}' was not found.`)
@@ -48,7 +60,10 @@ const fileInput = requiredElement<HTMLInputElement>('#image-file')
 const chooseFileButton = requiredElement<HTMLButtonElement>('#choose-file')
 const imageUrlInput = requiredElement<HTMLInputElement>('#image-url')
 const loadImageUrlButton = requiredElement<HTMLButtonElement>('#load-image-url')
+const imageUrlError = requiredElement<HTMLElement>('#image-url-error')
 const imageSummary = requiredElement<HTMLElement>('#image-summary')
+const imagePreview = requiredElement<HTMLElement>('#image-preview')
+const imagePreviewImage = requiredElement<HTMLImageElement>('#image-preview-image')
 const dropZone = requiredElement<HTMLElement>('#drop-zone')
 const sourcePanel = requiredElement<HTMLElement>('.web-controls')
 const modelBaseInput = requiredElement<HTMLInputElement>('#model-base')
@@ -59,8 +74,11 @@ const cancelButton = requiredElement<HTMLButtonElement>('#cancel')
 const clearCacheButton = requiredElement<HTMLButtonElement>('#clear-cache')
 const runStage = requiredElement<HTMLElement>('#run-stage')
 const runStatus = requiredElement<HTMLElement>('#run-status')
+const runAnnouncement = requiredElement<HTMLElement>('#run-announcement')
 const progressTrack = requiredElement<HTMLElement>('.progress-track')
 const progressFill = requiredElement<HTMLElement>('#progress-fill')
+const progressDetailButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-progress-detail]'))
+const progressDetailDescription = requiredElement<HTMLElement>('#progress-detail-description')
 const generationFlow = requiredElement<HTMLOListElement>('#generation-flow')
 const benchmarkReport = requiredElement<HTMLElement>('#benchmark-report')
 const benchmarkSummary = requiredElement<HTMLElement>('#benchmark-summary')
@@ -90,9 +108,18 @@ let busy = false
 let activePlyUrl: string | undefined
 let downloadablePly: Blob | undefined
 let downloadableSplat: Blob | undefined
+let previewFrame: PreviewFrame | undefined
+let completionChimeContext: AudioContext | undefined
+let completionChimeArmed = false
 let previewGenerationKey = 0
 let activeRunTelemetry: RunTelemetry | undefined
 let benchmarkReportText = ''
+let lastAnnouncedRunStage = ''
+let progressDetailMode: ProgressDetailMode = readProgressDetailMode()
+let latestRunStatus: RunStatusSnapshot = {
+  stage: 'STATUS',
+  message: 'Checking browser compatibility…',
+}
 const retiredPlyUrls = new Set<string>()
 
 function formatBytes(bytes: number): string {
@@ -107,6 +134,77 @@ function formatDuration(milliseconds: number): string {
   const seconds = milliseconds / 1_000
   if (seconds < 60) return `${seconds.toFixed(2)} s`
   return `${Math.floor(seconds / 60)}m ${(seconds % 60).toFixed(1)}s`
+}
+
+function armCompletionChime(): void {
+  completionChimeArmed = true
+  if (!completionChimeContext) {
+    try {
+      completionChimeContext = new AudioContext()
+    } catch {
+      return
+    }
+  }
+  void completionChimeContext.resume().catch(() => undefined)
+}
+
+function playCompletionChime(): void {
+  if (!completionChimeArmed) return
+  completionChimeArmed = false
+  const context = completionChimeContext
+  if (!context || context.state !== 'running') return
+
+  // A gentle, original three-note appliance-completion chime synthesized in
+  // the browser: no audio asset is downloaded or imitated from a specific device.
+  const startedAt = context.currentTime + 0.03
+  for (const [index, frequency] of [783.99, 1046.5, 1318.51].entries()) {
+    const oscillator = context.createOscillator()
+    const gain = context.createGain()
+    const noteAt = startedAt + index * 0.16
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(frequency, noteAt)
+    gain.gain.setValueAtTime(0.0001, noteAt)
+    gain.gain.exponentialRampToValueAtTime(0.09, noteAt + 0.015)
+    gain.gain.exponentialRampToValueAtTime(0.0001, noteAt + 0.25)
+    oscillator.connect(gain).connect(context.destination)
+    oscillator.start(noteAt)
+    oscillator.stop(noteAt + 0.27)
+  }
+}
+
+function fitPreviewFrame(positions: Float32Array): PreviewFrame | undefined {
+  if (positions.length < 3) return undefined
+  let minX = Infinity
+  let minY = Infinity
+  let minZ = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+  let maxZ = -Infinity
+  for (let index = 0; index + 2 < positions.length; index += 3) {
+    const x = positions[index]
+    const y = positions[index + 1]
+    const z = positions[index + 2]
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue
+    minX = Math.min(minX, x)
+    minY = Math.min(minY, y)
+    minZ = Math.min(minZ, z)
+    maxX = Math.max(maxX, x)
+    maxY = Math.max(maxY, y)
+    maxZ = Math.max(maxZ, z)
+  }
+  if (![minX, minY, minZ, maxX, maxY, maxZ].every(Number.isFinite)) return undefined
+
+  const center: [number, number, number] = [
+    (minX + maxX) / 2,
+    -((minY + maxY) / 2),
+    -((minZ + maxZ) / 2),
+  ]
+  const longestSide = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 0.1)
+  const distance = Math.max(longestSide / (2 * Math.tan(Math.PI / 6)) * 1.35, 0.35)
+  return {
+    position: [center[0], center[1], center[2] + distance],
+    target: center,
+  }
 }
 
 function compactStatus(message: string): string {
@@ -254,6 +352,56 @@ function stageToFlowStage(stage: string): FlowStage | undefined {
   return undefined
 }
 
+const guidedStageCopy: Record<FlowStage, { stage: string; message: string; detail: string }> = {
+  source: {
+    stage: 'SOURCE IMAGE',
+    message: 'Reading your image and preparing it for local generation.',
+    detail: 'Preparing the image',
+  },
+  model: {
+    stage: 'PREPARING THE ENGINE',
+    message: 'Checking, downloading, and loading the model components this browser needs.',
+    detail: 'Getting the AI model ready',
+  },
+  conditioning: {
+    stage: 'UNDERSTANDING THE IMAGE',
+    message: 'Turning the image into visual features the 3D generator can work with.',
+    detail: 'Learning the image structure',
+  },
+  sampling: {
+    stage: 'SHAPING THE 3D SCENE',
+    message: 'Iteratively refining a hidden spatial representation of the object.',
+    detail: 'Refining the spatial structure',
+  },
+  decode: {
+    stage: 'BUILDING THE GAUSSIANS',
+    message: 'Converting the spatial representation into visible 3D Gaussian points.',
+    detail: 'Creating visible 3D points',
+  },
+  preview: {
+    stage: 'PREPARING YOUR RESULT',
+    message: 'Packaging the completed scene for the viewer and downloads.',
+    detail: 'Preparing the interactive result',
+  },
+}
+
+function readProgressDetailMode(): ProgressDetailMode {
+  try {
+    return localStorage.getItem('triposplat-progress-detail') === 'guided' ? 'guided' : 'technical'
+  } catch {
+    return 'technical'
+  }
+}
+
+function statusForDetailMode(snapshot: RunStatusSnapshot): { stage: string; message: string } {
+  if (progressDetailMode === 'technical') return snapshot
+  const flowStage = stageToFlowStage(snapshot.stage)
+  if (!flowStage) return snapshot
+  const guided = guidedStageCopy[flowStage]
+  const percentage = snapshot.progress === undefined ? '' : ` ${Math.round(snapshot.progress * 100)}% through this stage.`
+  return { stage: guided.stage, message: `${guided.message}${percentage}` }
+}
+
 function setFlowStage(activeStage: FlowStage, detail?: string): void {
   const activeIndex = flowOrder.indexOf(activeStage)
   for (const item of flowItems) {
@@ -262,10 +410,47 @@ function setFlowStage(activeStage: FlowStage, detail?: string): void {
     const state = itemIndex < activeIndex ? 'complete' : itemIndex === activeIndex ? 'active' : 'waiting'
     item.dataset.state = state
     const status = item.querySelector('small')
-    if (status) status.textContent = state === 'active' ? `RUNNING · ${compactStatus(detail ?? 'Working locally')}` : state === 'complete' ? 'COMPLETE' : 'WAITING'
+    const visibleDetail = progressDetailMode === 'technical'
+      ? compactStatus(detail ?? 'Working locally')
+      : guidedStageCopy[activeStage].detail
+    if (status) status.textContent = state === 'active' ? `RUNNING · ${visibleDetail}` : state === 'complete' ? 'COMPLETE' : 'WAITING'
     if (state === 'active') item.setAttribute('aria-current', 'step')
     else item.removeAttribute('aria-current')
   }
+}
+
+function renderRunStatus(announceStageChange = true): void {
+  const visible = statusForDetailMode(latestRunStatus)
+  runStage.textContent = visible.stage
+  runStatus.textContent = visible.message
+  if (announceStageChange && visible.stage !== lastAnnouncedRunStage) {
+    runAnnouncement.textContent = `${visible.stage}. ${visible.message}`
+    lastAnnouncedRunStage = visible.stage
+  }
+  const percent = latestRunStatus.progress === undefined ? 0 : Math.max(0, Math.min(100, latestRunStatus.progress * 100))
+  progressFill.style.width = `${percent.toFixed(1)}%`
+  progressTrack.setAttribute('aria-valuenow', String(Math.round(percent)))
+  progressTrack.setAttribute('aria-valuetext', `${visible.stage}: ${visible.message}`)
+}
+
+function applyProgressDetailMode(mode: ProgressDetailMode, announce = true): void {
+  progressDetailMode = mode
+  for (const button of progressDetailButtons) {
+    button.setAttribute('aria-pressed', String(button.dataset.progressDetail === mode))
+  }
+  progressDetailDescription.textContent = mode === 'technical'
+    ? 'Technical mode shows exact graph stages, sampler steps, CFG invocations, and decode boundaries as they happen.'
+    : 'Guided mode translates the same pipeline into plain-language milestones while keeping the six-stage process visible.'
+  try {
+    localStorage.setItem('triposplat-progress-detail', mode)
+  } catch {
+    // A blocked storage preference should not affect generation.
+  }
+  lastAnnouncedRunStage = ''
+  renderRunStatus(false)
+  const activeStage = stageToFlowStage(latestRunStatus.stage)
+  if (activeStage) setFlowStage(activeStage, latestRunStatus.message)
+  if (announce) runAnnouncement.textContent = `${mode === 'technical' ? 'Technical' : 'Guided'} progress mode selected.`
 }
 
 function setPreviewRunState(state: 'waiting' | 'working' | 'ready' | 'retained' | 'failed', message: string): void {
@@ -274,17 +459,13 @@ function setPreviewRunState(state: 'waiting' | 'working' | 'ready' | 'retained' 
 }
 
 function setRunStatus(stage: string, message: string, progress?: number): void {
-  runStage.textContent = stage
-  runStatus.textContent = message
-  const percent = progress === undefined ? 0 : Math.max(0, Math.min(100, progress * 100))
-  progressFill.style.width = `${percent.toFixed(1)}%`
-  progressTrack.setAttribute('aria-valuenow', String(Math.round(percent)))
-  progressTrack.setAttribute('aria-valuetext', `${stage}: ${message}`)
+  latestRunStatus = progress === undefined ? { stage, message } : { stage, message, progress }
   const flowStage = stageToFlowStage(stage)
   if (flowStage) {
     recordFlowStage(flowStage)
     setFlowStage(flowStage, message)
   }
+  renderRunStatus()
 }
 
 function setBusy(next: boolean): void {
@@ -363,10 +544,14 @@ function friendlyError(error: unknown): { message: string; details: unknown } {
 function setViewerStatus(status: SplatPreviewStatus): void {
   viewerState.dataset.state = status.state
   viewerState.textContent = status.state === 'ready' ? 'Interactive' : status.state
-  if (status.state === 'ready') setPreviewRunState('ready', 'Completed scene is interactive. Drag to orbit and scroll to zoom.')
-  else if (status.state === 'loading') setPreviewRunState('working', 'Loading the completed scene into the interactive viewer…')
-  else if (status.state === 'failed') setPreviewRunState('failed', 'The preview could not be loaded. Downloads remain available.')
-  else if (!activePlyUrl) setPreviewRunState('waiting', 'A completed scene will appear here without leaving this page.')
+  if (status.state === 'ready') {
+    playCompletionChime()
+    setPreviewRunState('ready', 'Completed scene is framed to fit. Drag to orbit and scroll to zoom.')
+  } else if (status.state === 'loading') setPreviewRunState('working', 'Loading the completed scene into the interactive viewer…')
+  else if (status.state === 'failed') {
+    completionChimeArmed = false
+    setPreviewRunState('failed', 'The preview could not be loaded. Downloads remain available.')
+  } else if (!activePlyUrl) setPreviewRunState('waiting', 'A completed scene will appear here without leaving this page.')
 }
 
 function releaseRetiredPlyUrl(plyUrl: string): void {
@@ -382,6 +567,9 @@ function renderPreview(): void {
     fov: 60,
     autoRotate: false,
     maxScreenSize: 2048,
+    dynamicScene: false,
+    initialCameraPosition: previewFrame?.position,
+    initialCameraTarget: previewFrame?.target,
     splatPosition: [0, 0, 0],
     // The PLY already has TripoSplat's official +90° export mapping. This is
     // an additional proper presentation rotation for the viewer convention.
@@ -392,11 +580,12 @@ function renderPreview(): void {
   }))
 }
 
-function replaceOutput(ply: Blob, splat: Blob): void {
+function replaceOutput(ply: Blob, splat: Blob, frame: PreviewFrame | undefined): void {
   const previousPlyUrl = activePlyUrl
   const nextPlyUrl = URL.createObjectURL(ply)
   downloadablePly = ply
   downloadableSplat = splat
+  previewFrame = frame
   activePlyUrl = nextPlyUrl
   previewGenerationKey += 1
   if (previousPlyUrl) retiredPlyUrls.add(previousPlyUrl)
@@ -443,8 +632,12 @@ async function inspectImage(blob: Blob): Promise<Pick<SelectedImage, 'width' | '
 async function setSelectedImage(blob: Blob, name: string): Promise<void> {
   if (!blob.type.startsWith('image/')) throw new Error('Choose an image file, or a URL that returns an image content type.')
   const image = await inspectImage(blob)
-  if (selectedImage) URL.revokeObjectURL(selectedImage.previewUrl)
-  selectedImage = { blob, name, previewUrl: URL.createObjectURL(blob), ...image }
+  const previousPreviewUrl = selectedImage?.previewUrl
+  const previewUrl = URL.createObjectURL(blob)
+  selectedImage = { blob, name, previewUrl, ...image }
+  imagePreviewImage.src = previewUrl
+  imagePreview.hidden = false
+  if (previousPreviewUrl) URL.revokeObjectURL(previousPreviewUrl)
   const alphaDescription = image.hasAlpha
     ? 'Transparency detected — ready for generation.'
     : 'No transparency detected — this will need a browser-local background remover and cannot run in this preview.'
@@ -453,16 +646,45 @@ async function setSelectedImage(blob: Blob, name: string): Promise<void> {
   updateGenerateButton()
 }
 
+function clearImageUrlError(): void {
+  imageUrlError.hidden = true
+  imageUrlError.textContent = ''
+  imageUrlInput.removeAttribute('aria-invalid')
+}
+
+function showImageUrlError(message: string): void {
+  imageUrlError.textContent = message
+  imageUrlError.hidden = false
+  imageUrlInput.setAttribute('aria-invalid', 'true')
+}
+
+function imageUrlErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  return 'The image could not be loaded. Check the URL and try another image host.'
+}
+
 async function loadImageFromUrl(): Promise<void> {
   const value = imageUrlInput.value.trim()
   if (!value) throw new Error('Enter an image URL first.')
-  const url = new URL(value)
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    throw new Error('Enter a complete image URL, including https://.')
+  }
+  clearImageUrlError()
   setRunStatus('IMAGE URL', 'Downloading the image directly into this browser…')
-  const response = await fetch(url, { mode: 'cors' })
-  if (!response.ok) throw new Error(`The image URL returned HTTP ${response.status} ${response.statusText}.`)
+  let response: Response
+  try {
+    response = await fetch(url, { mode: 'cors' })
+  } catch {
+    throw new Error('The browser could not read this image. The host may be blocking cross-origin access (CORS), or the URL may be unavailable. Use an image host that sends Access-Control-Allow-Origin for this site, or choose a local file instead.')
+  }
+  if (!response.ok) throw new Error(`The image host returned HTTP ${response.status} ${response.statusText}. Check the URL or choose another image host.`)
   const blob = await response.blob()
   const name = decodeURIComponent(url.pathname.split('/').pop() || 'remote-image')
   await setSelectedImage(blob, name)
+  clearImageUrlError()
   setRunStatus('IMAGE READY', 'Image loaded locally. The default browser model package is ready when you are.')
 }
 
@@ -577,6 +799,7 @@ async function run(): Promise<void> {
   if (!compatibility?.supported) throw new Error('This browser does not meet the current WebGPU requirements.')
   const base = normalizedModelBase(modelBaseInput.value)
   hideDiagnostics()
+  armCompletionChime()
   controller?.abort()
   controller = new AbortController()
   startRunTelemetry()
@@ -605,8 +828,9 @@ async function run(): Promise<void> {
       setRunStatus('EXPORTING', 'Encoding portable PLY and .splat files…')
       const ply = await scene.exportPLY()
       const splat = await scene.exportSplat()
-      setPreviewRunState('working', 'Swapping in the completed scene without resetting the page…')
-      replaceOutput(ply, splat)
+      const frame = fitPreviewFrame(scene.positions)
+      setPreviewRunState('working', 'Framing and swapping in the completed scene without resetting the page…')
+      replaceOutput(ply, splat, frame)
       setRunStatus('COMPLETE', `Generated ${scene.count.toLocaleString()} Gaussians. Preview and downloads are ready.`, 1)
       const telemetry = finishRunTelemetry()
       if (telemetry) showBenchmarkReport(buildBenchmarkReport(telemetry, scene, base), performance.now() - telemetry.startedAtMs)
@@ -622,6 +846,7 @@ async function run(): Promise<void> {
   } finally {
     if (controller?.signal.aborted) setRunStatus('CANCELLED', 'Cancelled. The next run will start a clean worker.')
     if (!completed) {
+      completionChimeArmed = false
       finishRunTelemetry()
       setPreviewRunState(
         activePlyUrl ? 'retained' : 'failed',
@@ -639,7 +864,15 @@ function modelBaseFromLocation(): string {
 }
 
 modelBaseInput.value = modelBaseFromLocation()
+applyProgressDetailMode(progressDetailMode, false)
 renderPreview()
+
+for (const button of progressDetailButtons) {
+  button.addEventListener('click', () => {
+    const mode = button.dataset.progressDetail
+    if (mode === 'guided' || mode === 'technical') applyProgressDetailMode(mode)
+  })
+}
 
 chooseFileButton.addEventListener('click', () => fileInput.click())
 fileInput.addEventListener('change', () => {
@@ -655,11 +888,13 @@ fileInput.addEventListener('change', () => {
 
 loadImageUrlButton.addEventListener('click', () => {
   void loadImageFromUrl().catch((error) => {
-    const friendly = friendlyError(error)
-    setRunStatus('IMAGE URL ERROR', friendly.message)
-    showDiagnostics(friendly.message, friendly.details)
+    const message = imageUrlErrorMessage(error)
+    showImageUrlError(message)
+    setRunStatus('IMAGE URL ERROR', message)
+    showDiagnostics(message, friendlyError(error).details)
   })
 })
+imageUrlInput.addEventListener('input', clearImageUrlError)
 
 for (const eventName of ['dragenter', 'dragover']) {
   sourcePanel.addEventListener(eventName, (event) => {
@@ -713,6 +948,7 @@ copyBenchmarkButton.addEventListener('click', () => {
 void checkPlatform()
 window.addEventListener('pagehide', () => {
   controller?.abort()
+  void completionChimeContext?.close()
   void model?.dispose()
   previewRoot.unmount()
   if (selectedImage) URL.revokeObjectURL(selectedImage.previewUrl)
