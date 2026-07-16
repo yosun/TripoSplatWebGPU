@@ -30,6 +30,8 @@ interface SplatPreviewProps {
   splatFlip: [boolean, boolean, boolean]
   onCameraChange?: (snap: CameraSnapshot) => void
   onViewerStateChange?: (status: SplatPreviewStatus) => void
+  /** Called only after this PLY URL no longer has an attached viewer. */
+  onViewerDisposed?: (plyUrl: string) => void
   children?: ReactNode
 }
 
@@ -48,6 +50,7 @@ export function SplatPreview({
   splatFlip,
   onCameraChange,
   onViewerStateChange,
+  onViewerDisposed,
   children,
 }: SplatPreviewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -61,6 +64,8 @@ export function SplatPreview({
   onCameraChangeRef.current = onCameraChange
   const onViewerStateChangeRef = useRef(onViewerStateChange)
   onViewerStateChangeRef.current = onViewerStateChange
+  const onViewerDisposedRef = useRef(onViewerDisposed)
+  onViewerDisposedRef.current = onViewerDisposed
 
   // Refs hold the latest transform values so the mount effect can apply them
   // when the viewer is recreated, without restarting on every transform change.
@@ -156,8 +161,16 @@ export function SplatPreview({
       cancelled = true
       const viewer = localViewer ?? viewerRef.current
       viewerRef.current = null
+      const notifyDisposed = () => {
+        if (plyUrl) onViewerDisposedRef.current?.(plyUrl)
+      }
       if (viewer) {
-        void viewer.dispose().catch(() => undefined)
+        void Promise.resolve()
+          .then(() => viewer.dispose())
+          .catch(() => undefined)
+          .finally(notifyDisposed)
+      } else {
+        notifyDisposed()
       }
     }
     // maxScreenSize is in deps because it's a constructor option that can't be

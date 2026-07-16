@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#070a12" />
     <meta name="description" content="Generate a Gaussian splat from an image using browser-local WebGPU." />
-    <title>TripoSplat WebGPU · Image to Spatial Scene</title>
+    <title>TripoSplat WebGPU · Image to 3D Offline Local</title>
     <link rel="stylesheet" href="/src/e2e-web.css" />
   </head>
   <body>
@@ -20,9 +20,11 @@
     </nav>
     <main class="app-shell web-app">
       <header class="web-hero">
-        <div class="eyebrow"><span>IMAGE → SPATIAL SCENE</span></div>
-        <h1>Make a scene.<br /><em>Keep it local.</em></h1>
-        <p>Choose an image and generate a Gaussian scene with your browser GPU. The model downloads once, is verified, and stays in browser storage when your platform allows it. Your source image is never uploaded.</p>
+        <div class="eyebrow"><span>Image to 3D Model. </span></div>
+        <h1>Make a scene.<br /><em>Offline. Local. Portable.</em></h1>
+        <p>Your browser uses WebGPU to run the full TripoSplat model locally.<br />
+The model downloads once (≈6.47 GB), verifies itself, and stays stored in offline browser storage.<br />
+After that, generation is instant — even with no internet connection.</p>
       </header>
       <section class="compatibility-panel" aria-labelledby="compatibility-heading">
         <div><span class="section-index">SYSTEM CHECK</span><h2 id="compatibility-heading">Preparing your browser</h2></div>
@@ -42,6 +44,7 @@
         <section class="preview-panel-web panel" aria-labelledby="scene-heading">
           <div class="panel-heading"><div><span class="section-index">STEP 3 / RESULT</span><h2 id="scene-heading">Your spatial scene</h2></div><span id="viewer-state" class="viewer-state">Waiting</span></div>
           <div id="web-preview-root"></div>
+          <p id="preview-run-state" class="preview-run-state" data-state="waiting" role="status" aria-live="polite">A completed scene will appear here without leaving this page.</p>
           <div class="download-row"><button id="download-ply" type="button" disabled>Download PLY</button><button id="download-splat" type="button" disabled>Download .splat</button></div>
         </section>
       </div>
@@ -53,6 +56,17 @@
         <details class="model-advanced"><summary>Use a different model server</summary><label for="model-base"><span>Model CDN directory</span><small>Must contain manifest.json and allow CORS requests from this site.</small><input id="model-base" type="url" inputmode="url" autocomplete="url" spellcheck="false" /></label></details>
         <button id="generate" class="primary-action" type="button" disabled><span>Choose an image to begin</span><b aria-hidden="true">↗</b></button>
         <div class="run-feedback"><small id="run-stage">STATUS</small><p id="run-status" role="status" aria-live="polite">Checking browser compatibility…</p><div class="progress-track" role="progressbar" aria-label="Generation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div></div>
+        <section class="generation-flow" aria-labelledby="generation-flow-heading">
+          <div class="flow-heading"><span class="section-index">ENGINEERING PIPELINE</span><h3 id="generation-flow-heading">What this browser is doing</h3></div>
+          <ol id="generation-flow" class="flow-steps">
+            <li data-flow-stage="source" data-state="active" aria-current="step"><span class="flow-marker">01</span><div><strong>Source image</strong><span>Inspect alpha and prepare local pixels.</span></div><small>READY</small></li>
+            <li data-flow-stage="model" data-state="waiting"><span class="flow-marker">02</span><div><strong>Model package</strong><span>Verify manifest, integrity, and browser cache.</span></div><small>WAITING</small></li>
+            <li data-flow-stage="conditioning" data-state="waiting"><span class="flow-marker">03</span><div><strong>Conditioning</strong><span>Preprocess → DINOv3 → Flux VAE.</span></div><small>WAITING</small></li>
+            <li data-flow-stage="sampling" data-state="waiting"><span class="flow-marker">04</span><div><strong>Flow sampler</strong><span>20 official steps · 40 CFG DiT calls.</span></div><small>WAITING</small></li>
+            <li data-flow-stage="decode" data-state="waiting"><span class="flow-marker">05</span><div><strong>Spatial decode</strong><span>Octree occupancy → Gaussian decoder.</span></div><small>WAITING</small></li>
+            <li data-flow-stage="preview" data-state="waiting"><span class="flow-marker">06</span><div><strong>Scene handoff</strong><span>Encode PLY / .splat and swap the viewer.</span></div><small>WAITING</small></li>
+          </ol>
+        </section>
         <div class="secondary-actions"><button id="cancel" type="button" disabled>Cancel current operation</button><button id="clear-cache" type="button">Clear cached model files</button></div>
         <div id="diagnostics" class="diagnostics" hidden><p id="diagnostic-message"></p><details><summary>Technical details</summary><pre id="diagnostic-details"></pre></details></div>
         <p class="privacy-note">Your image stays on this device. Only the manifest and browser-runtime model artifacts are requested from the official Hugging Face package unless you explicitly choose a different server. Opaque photos currently need a browser-local background remover; use a transparent PNG or WebP.</p>

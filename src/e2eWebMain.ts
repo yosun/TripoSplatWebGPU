@@ -1,5 +1,4 @@
 import { createElement } from 'react'
-import { flushSync } from 'react-dom'
 import { createRoot, type Root } from 'react-dom/client'
 
 import {
@@ -18,7 +17,9 @@ import { SplatPreview, type SplatPreviewStatus } from './components/SplatPreview
 
 const MODEL_BYTES = 6_465_182_402
 const DEFAULT_MODEL_BASE = 'https://huggingface.co/Yosun/TripoSplat-WebGPU/resolve/main/triposplat-webgpu/0.1.0-fp32.20260715/'
-const DEFAULT_STEPS = 4
+const DEFAULT_STEPS = 20
+
+type FlowStage = 'source' | 'model' | 'conditioning' | 'sampling' | 'decode' | 'preview'
 
 interface SelectedImage {
   blob: Blob
@@ -52,6 +53,7 @@ const runStage = requiredElement<HTMLElement>('#run-stage')
 const runStatus = requiredElement<HTMLElement>('#run-status')
 const progressTrack = requiredElement<HTMLElement>('.progress-track')
 const progressFill = requiredElement<HTMLElement>('#progress-fill')
+const generationFlow = requiredElement<HTMLOListElement>('#generation-flow')
 const diagnostics = requiredElement<HTMLElement>('#diagnostics')
 const diagnosticMessage = requiredElement<HTMLElement>('#diagnostic-message')
 const diagnosticDetails = requiredElement<HTMLElement>('#diagnostic-details')
@@ -59,10 +61,13 @@ const platformBadge = requiredElement<HTMLElement>('#platform-badge')
 const compatibilityList = requiredElement<HTMLUListElement>('#compatibility-list')
 const previewMount = requiredElement<HTMLElement>('#web-preview-root')
 const viewerState = requiredElement<HTMLElement>('#viewer-state')
+const previewRunState = requiredElement<HTMLElement>('#preview-run-state')
 const downloadPlyButton = requiredElement<HTMLButtonElement>('#download-ply')
 const downloadSplatButton = requiredElement<HTMLButtonElement>('#download-splat')
 
 const previewRoot: Root = createRoot(previewMount)
+const flowOrder: readonly FlowStage[] = ['source', 'model', 'conditioning', 'sampling', 'decode', 'preview']
+const flowItems = Array.from(generationFlow.querySelectorAll<HTMLElement>('[data-flow-stage]'))
 let compatibility: CompatibilityReport | undefined
 let cacheBackend: CacheBackend = 'none'
 let selectedImage: SelectedImage | undefined
@@ -74,6 +79,7 @@ let activePlyUrl: string | undefined
 let downloadablePly: Blob | undefined
 let downloadableSplat: Blob | undefined
 let previewGenerationKey = 0
+const retiredPlyUrls = new Set<string>()
 
 function formatBytes(bytes: number): string {
   if (bytes < 1_024) return `${bytes} B`
@@ -99,12 +105,43 @@ function normalizedModelBase(value: string): string {
   return url.href
 }
 
+function stageToFlowStage(stage: string): FlowStage | undefined {
+  const normalized = stage.toLowerCase()
+  if (normalized.includes('image') || normalized.includes('source')) return 'source'
+  if (normalized.includes('model') || normalized.includes('manifest') || normalized.includes('runtime') || normalized.includes('graph')) return 'model'
+  if (normalized.includes('preprocess') || normalized.includes('dino') || normalized.includes('vae')) return 'conditioning'
+  if (normalized.includes('sampling')) return 'sampling'
+  if (normalized.includes('octree') || normalized.includes('gaussian')) return 'decode'
+  if (normalized.includes('packing') || normalized.includes('export') || normalized.includes('complete')) return 'preview'
+  return undefined
+}
+
+function setFlowStage(activeStage: FlowStage): void {
+  const activeIndex = flowOrder.indexOf(activeStage)
+  for (const item of flowItems) {
+    const itemStage = item.dataset.flowStage as FlowStage | undefined
+    const itemIndex = itemStage ? flowOrder.indexOf(itemStage) : -1
+    const state = itemIndex < activeIndex ? 'complete' : itemIndex === activeIndex ? 'active' : 'waiting'
+    item.dataset.state = state
+    if (state === 'active') item.setAttribute('aria-current', 'step')
+    else item.removeAttribute('aria-current')
+  }
+}
+
+function setPreviewRunState(state: 'waiting' | 'working' | 'ready' | 'retained' | 'failed', message: string): void {
+  previewRunState.dataset.state = state
+  previewRunState.textContent = message
+}
+
 function setRunStatus(stage: string, message: string, progress?: number): void {
   runStage.textContent = stage
   runStatus.textContent = message
   const percent = progress === undefined ? 0 : Math.max(0, Math.min(100, progress * 100))
   progressFill.style.width = `${percent.toFixed(1)}%`
   progressTrack.setAttribute('aria-valuenow', String(Math.round(percent)))
+  progressTrack.setAttribute('aria-valuetext', `${stage}: ${message}`)
+  const flowStage = stageToFlowStage(stage)
+  if (flowStage) setFlowStage(flowStage)
 }
 
 function setBusy(next: boolean): void {
@@ -183,34 +220,46 @@ function friendlyError(error: unknown): { message: string; details: unknown } {
 function setViewerStatus(status: SplatPreviewStatus): void {
   viewerState.dataset.state = status.state
   viewerState.textContent = status.state === 'ready' ? 'Interactive' : status.state
+  if (status.state === 'ready') setPreviewRunState('ready', 'Completed scene is interactive. Drag to orbit and scroll to zoom.')
+  else if (status.state === 'loading') setPreviewRunState('working', 'Loading the completed scene into the interactive viewer…')
+  else if (status.state === 'failed') setPreviewRunState('failed', 'The preview could not be loaded. Downloads remain available.')
+  else if (!activePlyUrl) setPreviewRunState('waiting', 'A completed scene will appear here without leaving this page.')
+}
+
+function releaseRetiredPlyUrl(plyUrl: string): void {
+  if (!retiredPlyUrls.delete(plyUrl)) return
+  URL.revokeObjectURL(plyUrl)
 }
 
 function renderPreview(): void {
-  flushSync(() => {
-    previewRoot.render(createElement(SplatPreview, {
-      plyUrl: activePlyUrl ?? null,
-      generationKey: previewGenerationKey,
-      bgColor: '#030509',
-      fov: 60,
-      autoRotate: false,
-      maxScreenSize: 2048,
-      splatPosition: [0, 0, 0],
-      splatRotation: [0, 0, 0],
-      splatFlip: [false, false, false],
-      onViewerStateChange: setViewerStatus,
-    }))
-  })
+  previewRoot.render(createElement(SplatPreview, {
+    plyUrl: activePlyUrl ?? null,
+    generationKey: previewGenerationKey,
+    bgColor: '#030509',
+    fov: 60,
+    autoRotate: false,
+    maxScreenSize: 2048,
+    splatPosition: [0, 0, 0],
+    // The PLY already has TripoSplat's official +90° export mapping. This is
+    // an additional proper presentation rotation for the viewer convention.
+    splatRotation: [180, 0, 0],
+    splatFlip: [false, false, false],
+    onViewerStateChange: setViewerStatus,
+    onViewerDisposed: releaseRetiredPlyUrl,
+  }))
 }
 
-function clearOutput(): void {
-  if (activePlyUrl) URL.revokeObjectURL(activePlyUrl)
-  activePlyUrl = undefined
-  downloadablePly = undefined
-  downloadableSplat = undefined
+function replaceOutput(ply: Blob, splat: Blob): void {
+  const previousPlyUrl = activePlyUrl
+  const nextPlyUrl = URL.createObjectURL(ply)
+  downloadablePly = ply
+  downloadableSplat = splat
+  activePlyUrl = nextPlyUrl
   previewGenerationKey += 1
-  downloadPlyButton.disabled = true
-  downloadSplatButton.disabled = true
+  if (previousPlyUrl) retiredPlyUrls.add(previousPlyUrl)
   renderPreview()
+  downloadPlyButton.disabled = false
+  downloadSplatButton.disabled = false
 }
 
 function download(blob: Blob | undefined, name: string): void {
@@ -252,7 +301,6 @@ async function setSelectedImage(blob: Blob, name: string): Promise<void> {
   if (!blob.type.startsWith('image/')) throw new Error('Choose an image file, or a URL that returns an image content type.')
   const image = await inspectImage(blob)
   if (selectedImage) URL.revokeObjectURL(selectedImage.previewUrl)
-  clearOutput()
   selectedImage = { blob, name, previewUrl: URL.createObjectURL(blob), ...image }
   const alphaDescription = image.hasAlpha
     ? 'Transparency detected — ready for generation.'
@@ -272,7 +320,7 @@ async function loadImageFromUrl(): Promise<void> {
   const blob = await response.blob()
   const name = decodeURIComponent(url.pathname.split('/').pop() || 'remote-image')
   await setSelectedImage(blob, name)
-  setRunStatus('IMAGE READY', 'Image loaded locally. Add your model server URL to continue.')
+  setRunStatus('IMAGE READY', 'Image loaded locally. The default browser model package is ready when you are.')
 }
 
 function updateCompatibilityList(items: Array<{ text: string; state: 'ready' | 'warning' | 'problem' }>): void {
@@ -371,8 +419,14 @@ function reportLoadProgress(progress: LoadProgress): void {
 }
 
 function reportGenerationProgress(progress: GenerationProgress): void {
-  const fraction = progress.progress ?? (progress.totalSteps ? (progress.step ?? 0) / progress.totalSteps : undefined)
-  setRunStatus(`GENERATING · ${progress.stage.toUpperCase()}`, progress.message, fraction)
+  const samplingFraction = progress.stage === 'sampling' && progress.totalInvocations
+    ? (progress.invocation ?? 0) / progress.totalInvocations
+    : undefined
+  const fraction = samplingFraction ?? progress.progress ?? (progress.totalSteps ? (progress.step ?? 0) / progress.totalSteps : undefined)
+  const samplingDetail = progress.stage === 'sampling' && progress.step && progress.totalSteps && progress.invocation && progress.totalInvocations
+    ? ` Step ${progress.step}/${progress.totalSteps} · CFG invocation ${progress.invocation}/${progress.totalInvocations}.`
+    : ''
+  setRunStatus(`GENERATING · ${progress.stage.toUpperCase()}`, `${progress.message}${samplingDetail}`, fraction)
 }
 
 async function run(): Promise<void> {
@@ -383,7 +437,13 @@ async function run(): Promise<void> {
   controller?.abort()
   controller = new AbortController()
   setBusy(true)
-  clearOutput()
+  setPreviewRunState(
+    activePlyUrl ? 'retained' : 'working',
+    activePlyUrl
+      ? 'Generating a replacement. The last completed scene remains interactive.'
+      : 'Generating your first scene. This page and preview stay in place.',
+  )
+  let completed = false
   try {
     await requestPersistentStorage()
     await verifyModelServer(base)
@@ -398,15 +458,13 @@ async function run(): Promise<void> {
     })
     try {
       setRunStatus('EXPORTING', 'Encoding portable PLY and .splat files…')
-      downloadablePly = await scene.exportPLY()
-      downloadableSplat = await scene.exportSplat()
-      activePlyUrl = URL.createObjectURL(downloadablePly)
-      previewGenerationKey += 1
-      renderPreview()
-      downloadPlyButton.disabled = false
-      downloadSplatButton.disabled = false
+      const ply = await scene.exportPLY()
+      const splat = await scene.exportSplat()
+      setPreviewRunState('working', 'Swapping in the completed scene without resetting the page…')
+      replaceOutput(ply, splat)
       setRunStatus('COMPLETE', `Generated ${scene.count.toLocaleString()} Gaussians. Preview and downloads are ready.`, 1)
       await refreshCacheStatus()
+      completed = true
     } finally {
       scene.dispose()
     }
@@ -416,6 +474,12 @@ async function run(): Promise<void> {
     showDiagnostics(friendly.message, friendly.details)
   } finally {
     if (controller?.signal.aborted) setRunStatus('CANCELLED', 'Cancelled. The next run will start a clean worker.')
+    if (!completed) {
+      setPreviewRunState(
+        activePlyUrl ? 'retained' : 'failed',
+        activePlyUrl ? 'The last completed scene is still available.' : 'No completed scene was produced. Review the guidance below and try again.',
+      )
+    }
     controller = undefined
     setBusy(false)
   }
@@ -499,4 +563,5 @@ window.addEventListener('pagehide', () => {
   previewRoot.unmount()
   if (selectedImage) URL.revokeObjectURL(selectedImage.previewUrl)
   if (activePlyUrl) URL.revokeObjectURL(activePlyUrl)
+  for (const plyUrl of retiredPlyUrls) URL.revokeObjectURL(plyUrl)
 }, { once: true })
