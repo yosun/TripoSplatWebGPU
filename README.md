@@ -1,20 +1,28 @@
 # TripoSplat WebGPU
 
+[![Vercel deployment](https://img.shields.io/badge/Vercel-Image%20to%203D%20runner-c6ff4a?logo=vercel&logoColor=black)](https://triposplat-webgpu.vercel.app/e2e-web)
 
 An in-progress browser-local WebGPU port of [TripoSplat](https://github.com/VAST-AI-Research/TripoSplat), built from the [ml-sharp-web](https://github.com/bring-shrubbery/ml-sharp-web) application chassis. The official TripoSplat PyTorch implementation is the numerical source of truth. The existing SHARP path remains available as a known-good browser inference baseline.
 
+## Web runner
 
-## Quick Test 
- 
+**[Launch the TripoSplat WebGPU image-to-spatial-scene runner →](https://triposplat-webgpu.vercel.app/e2e-web)**
+
+The root URL redirects to this public runner. Choose an image from your device or load one from a CORS-enabled URL, then generate. The first run downloads and verifies the canonical 6.465 GB browser-runtime package directly from [Yosun/TripoSplat-WebGPU](https://huggingface.co/Yosun/TripoSplat-WebGPU) and reuses verified OPFS/Cache API storage when available. Source images remain on the device.
+
+The Vercel deployment does not proxy model data: the browser fetches the immutable Hugging Face artifacts directly. The fixture-driven [`/e2e-lab.html`](https://triposplat-webgpu.vercel.app/e2e-lab) remains an engineering qualification surface; it is not the public runner.
+
+## Quick Test
+
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the end-to-end lab at: `http://localhost:<PORT>/e2e-lab.html`
+Open the public runner locally at `http://localhost:<PORT>/e2e-web.html`. The deterministic qualification lab remains available at `http://localhost:<PORT>/e2e-lab.html`.
 
-Our test inputs and recorded outputs are stored in: `https://github.com/yosun/TripoSplatWebGPU/tree/main/public/_testers`
+Our test inputs and recorded outputs are stored in [`public/_testers`](https://github.com/yosun/TripoSplatWebGPU/tree/main/public/_testers).
 
 
 
@@ -77,9 +85,11 @@ pnpm test
 pnpm dev
 ```
 
-The development server exposes these validation surfaces:
+The development server exposes a public runner and engineering validation surfaces:
 
-- `/` — preserved SHARP application path;
+- `/` — redirects to the public TripoSplat image-to-spatial-scene runner;
+- `/e2e-web.html` — public browser-local runner: visible file/URL image input, remote model-CDN configuration, compatibility checks, verified browser cache, generation, preview, and exports;
+- `/sharp-lab.html` — preserved legacy SHARP application path;
 - `/encoder-lab.html` — preprocessing and encoder vertical-slice comparison;
 - `/dit-lab.html` — one DiT invocation against a deterministic PyTorch fixture;
 - `/flow-lab.html` — four-step CFG/Euler execution and final-state comparison;
@@ -87,7 +97,7 @@ The development server exposes these validation surfaces:
 - `/gaussian-lab.html` — one fp32 raw Gaussian-feature invocation.
 - `/e2e-lab.html` — complete prepared-image package execution, export qualification, and exported-PLY viewer/canvas sanity gate.
 
-The labs are engineering fixtures. They are not the package API and are not an end-user demo.
+The labs remain engineering fixtures rather than the package API. The public `/e2e-web.html` runner uses the package’s normal image-input path rather than deterministic fixtures, but it is still an engineering preview and does not make a production-readiness or numerical-parity claim.
 
 ## Preserved SHARP baseline
 
@@ -124,6 +134,7 @@ Read the [browser architecture audit](docs/architecture-audit.md) for graph cont
 
 ## Documentation
 
+- [Direct and agent integration](docs/agent-integration.md) — copy-ready image input to PLY/`.splat` onboarding
 - [Current status and release gates](docs/current-status.md)
 - [Developer guide](docs/developer-guide.md)
 - [Alpha API reference](docs/api-reference.md)

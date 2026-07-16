@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="triposplat-model-base-url" content="/models/triposplat/" />
+    <title>Image to PLY and splat</title>
+  </head>
+  <body>
+    <main>
+      <h1>Image to PLY and .splat</h1>
+      <p>Input stays in this browser. Use an alpha-bearing PNG until a local background remover is configured.</p>
+      <input id="image" type="file" accept="image/*" />
+      <button id="generate" type="button">Generate</button>
+      <button id="cancel" type="button">Cancel</button>
+      <button id="download-ply" type="button" disabled>Download PLY</button>
+      <button id="download-splat" type="button" disabled>Download .splat</button>
+      <pre id="status" aria-live="polite">Checking WebGPU…</pre>
+    </main>
+    <script type="module" src="./browser.ts"></script>
+  </body>
+</html>

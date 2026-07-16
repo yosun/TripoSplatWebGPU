@@ -35,6 +35,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         app: 'index.html',
+        e2eWeb: 'e2e-web.html',
+        sharpLab: 'sharp-lab.html',
         encoderLab: 'encoder-lab.html',
         dinoLab: 'dino-lab.html',
         ditLab: 'dit-lab.html',

@@ -3,111 +3,118 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TripoSplat WebGPU End-to-End Qualification</title>
-    <style>
-      #e2e-preview-root {
-        width: min(100%, 960px);
-        height: min(70vh, 640px);
-        min-height: 420px;
-        margin-block: 0.75rem 1rem;
-      }
-      #e2e-preview-root .preview-panel {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        height: 100%;
-      }
-      #e2e-preview-root .preview-toolbar {
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        margin-bottom: 0.4rem;
-      }
-      #e2e-preview-root .splat-canvas-shell {
-        position: relative;
-        flex: 1;
-        min-height: 360px;
-        overflow: hidden;
-        background: #000;
-        border: 1px solid #555;
-      }
-      #e2e-preview-root .splat-canvas-host {
-        position: absolute;
-        inset: 0;
-      }
-      #e2e-preview-root .splat-canvas-host canvas {
-        display: block;
-        width: 100% !important;
-        height: 100% !important;
-      }
-      #e2e-preview-root .splat-empty {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        color: #ddd;
-      }
-    </style>
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#070a12" />
+    <meta name="description" content="Run the TripoSplat five-stage image-to-Gaussian pipeline locally with WebGPU." />
+    <title>TripoSplat WebGPU · Spatial Generation Lab</title>
+    <link rel="stylesheet" href="/src/e2e-lab.css" />
   </head>
   <body>
-    <main>
-      <h1>TripoSplat · browser-local end-to-end qualification</h1>
-      <p>
-        Runs the package facade through prepared-image preprocessing, both encoders,
-        the official 4-step flow schedule, the dynamic octree, Gaussian decoding,
-        and PLY/.splat export. This is a structural execution gate, not a numerical
-        parity oracle.
-      </p>
-      <label>
-        Model base URL
-        <input id="model-base" value="/models/triposplat/" />
-      </label>
-      <label>
-        Artifact cache
-        <select id="cache">
-          <option value="none" selected>None (stage and release each graph)</option>
-          <option value="opfs">OPFS persistent cache</option>
-          <option value="cache-api">Cache API persistent cache</option>
-        </select>
-      </label>
-      <label>
-        Prepared image
-        <input id="prepared-image" value="/fixtures/generated/dinov3-fp32/prepared.png" />
-      </label>
-      <label>
-        VAE epsilon
-        <input id="vae-noise" value="/fixtures/generated/flux2-vae-fp32/epsilon.f32" />
-      </label>
-      <label>
-        4-step flow fixture directory
-        <input id="flow-fixture" value="/fixtures/generated/flow4-fp32-compute" />
-      </label>
-      <div>
-        <button id="run" type="button">Run browser-local E2E gate</button>
-        <button id="cancel" type="button" disabled>Cancel</button>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+    <nav class="topbar" aria-label="Primary navigation">
+      <a class="brand" href="/e2e-lab.html" aria-label="TripoSplat WebGPU home">
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span>TRIPOSPLAT <b>WEBGPU</b></span>
+      </a>
+      <div class="topbar-meta">
+        <span class="capability" id="webgpu-capability"><i></i>Checking WebGPU</span>
+        <a href="https://github.com/yosun/TripoSplatWebGPU" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
       </div>
-      <p role="status" data-testid="e2e-status">
-        Ready. The default non-persistent mode verifies and stages one graph at a time.
-      </p>
-      <section aria-labelledby="e2e-viewer-heading">
-        <h2 id="e2e-viewer-heading">Exported PLY viewer gate</h2>
-        <p data-testid="e2e-viewer-status" data-viewer-state="waiting">
-          Viewer is waiting for an exported PLY.
-        </p>
-        <div id="e2e-preview-root"></div>
+    </nav>
+
+    <main class="app-shell">
+      <header class="hero">
+        <div class="eyebrow"><span>01</span> Browser-native spatial intelligence</div>
+        <h1>Turn pixels into<br /><em>spatial worlds.</em></h1>
+        <p>Run the complete five-stage TripoSplat pipeline on your GPU. Your prepared image stays in the browser—from neural encoding to an interactive Gaussian scene.</p>
+        <div class="pipeline" aria-label="Pipeline stages">
+          <span>DINOv3</span><i>→</i><span>Flux VAE</span><i>→</i><span>Flow</span><i>→</i><span>Octree</span><i>→</i><span>Gaussians</span>
+        </div>
+      </header>
+
+      <div class="workspace-grid">
+        <aside class="control-panel panel">
+          <div class="panel-heading">
+            <div><span class="section-index">CONTROL / 01</span><h2>Generation setup</h2></div>
+            <span class="local-badge">LOCAL</span>
+          </div>
+          <p class="panel-copy">Connect immutable model artifacts and deterministic fixtures. Nothing is uploaded by this interface.</p>
+
+          <div class="field-stack">
+            <label for="model-base"><span>Model base URL</span><small>Manifest and ONNX graph directory</small></label>
+            <input id="model-base" value="/models/triposplat/" autocomplete="url" spellcheck="false" />
+            <label for="cache"><span>Artifact cache</span><small>Persistent storage reduces repeat downloads</small></label>
+            <select id="cache">
+              <option value="none" selected>Ephemeral · release after each graph</option>
+              <option value="opfs">OPFS · persistent device cache</option>
+              <option value="cache-api">Cache API · persistent browser cache</option>
+            </select>
+          </div>
+
+          <details class="advanced">
+            <summary><span>Fixture endpoints</span><small>Advanced</small></summary>
+            <div class="advanced-fields">
+              <label for="prepared-image">Prepared image</label>
+              <input id="prepared-image" value="/fixtures/generated/dinov3-fp32/prepared.png" autocomplete="url" spellcheck="false" />
+              <label for="vae-noise">VAE epsilon</label>
+              <input id="vae-noise" value="/fixtures/generated/flux2-vae-fp32/epsilon.f32" autocomplete="url" spellcheck="false" />
+              <label for="flow-fixture">Flow fixture directory</label>
+              <input id="flow-fixture" value="/fixtures/generated/flow4-fp32-compute" autocomplete="url" spellcheck="false" />
+            </div>
+          </details>
+
+          <div class="run-actions">
+            <button class="run-button" id="run" type="button"><span>Run spatial generation</span><b aria-hidden="true">↗</b></button>
+            <button class="cancel-button" id="cancel" type="button" disabled>Cancel</button>
+          </div>
+
+          <div class="status-card">
+            <span class="status-pulse" aria-hidden="true"></span>
+            <div><small>PIPELINE STATUS</small><p role="status" data-testid="e2e-status">Ready. The default non-persistent mode verifies and stages one graph at a time.</p></div>
+          </div>
+        </aside>
+
+        <section class="viewer-panel panel" aria-labelledby="e2e-viewer-heading">
+          <div class="panel-heading viewer-heading">
+            <div><span class="section-index">VIEWPORT / 02</span><h2 id="e2e-viewer-heading">Gaussian scene</h2></div>
+            <p data-testid="e2e-viewer-status" data-viewer-state="waiting">Waiting for exported PLY</p>
+          </div>
+          <div id="e2e-preview-root">
+            <div class="viewer-placeholder" aria-hidden="true">
+              <div class="orbital"><span></span><i></i></div>
+              <p>Spatial viewport armed</p>
+              <small>Your generated scene will appear here</small>
+            </div>
+          </div>
+          <div class="viewer-footer" aria-hidden="true"><span>262K GAUSSIANS</span><span>BROWSER GPU</span><span>PLY + SPLAT</span></div>
+        </section>
+      </div>
+
+      <section class="notice" aria-label="Demo requirements">
+        <span>NOTE</span>
+        <p>This public interface is an engineering preview. A run requires a current desktop Chromium browser with WebGPU and separately hosted model artifacts with CORS and byte-range support.</p>
       </section>
       <pre class="error" data-testid="e2e-error" hidden></pre>
       <pre data-testid="e2e-result" hidden></pre>
     </main>
+
+    <footer><span>TRIPOSPLAT WEBGPU · 2027 INTERFACE</span><span>INFERENCE STAYS ON DEVICE</span></footer>
+
     <script>
-      // Surface module/bootstrap failures in the lab itself. Browser console
-      // access is not guaranteed in CI or controlled qualification sessions.
       const publishBootstrapError = (value) => {
         const target = document.querySelector('[data-testid="e2e-error"]')
         if (!target) return
         const error = value instanceof Error ? value : new Error(String(value))
         target.textContent = `Bootstrap error: ${error.name}: ${error.message}`
         target.hidden = false
+      }
+      const capability = document.querySelector('#webgpu-capability')
+      if (capability) {
+        const supported = 'gpu' in navigator
+        capability.classList.toggle('is-ready', supported)
+        capability.classList.toggle('is-missing', !supported)
+        capability.lastChild.textContent = supported ? 'WebGPU ready' : 'WebGPU unavailable'
       }
       window.addEventListener('error', (event) => publishBootstrapError(event.error ?? event.message))
       window.addEventListener('unhandledrejection', (event) => publishBootstrapError(event.reason))

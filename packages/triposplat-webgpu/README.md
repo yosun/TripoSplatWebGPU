@@ -14,6 +14,8 @@ After both packages are released, the intended registry command is `npm install 
 
 The package is browser-only at runtime and has no React, viewer, Vite, or Next.js dependency. It ships an ESM worker plus its ONNX Runtime WASM asset. Serve package assets with the same origin or correct CORS headers.
 
+For a copy-ready image-in/PLY-and-`.splat`-out adapter and platform recipes, see the repository's [direct and agent integration guide](../../docs/agent-integration.md) and [`examples/direct`](../../examples/direct).
+
 ## Image input and preprocessing
 
 `normalizeTripoSplatImageInput()` is the framework-neutral image boundary. It accepts `Blob`/`File`, `ImageBitmap`, `ImageData`, `HTMLImageElement`, `HTMLCanvasElement`, or `OffscreenCanvas`; DOM-only constructors are feature-guarded so the same module can run in a worker with `Blob`, `ImageBitmap`, `ImageData`, and `OffscreenCanvas`.

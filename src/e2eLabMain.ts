@@ -2,7 +2,7 @@
 This version adds:
 
 * Editable steps, guidance scale, shift, and seed
-* Step presets: 4, 8, 12, 20, 32, 50
+* Step presets: 4 and 20
 * Deterministic comparisons using the same fixture tensors
 * Run history showing parameters, generation time, hashes, Gaussian count, and pass/fail
 * Download PLY and Download .splat
@@ -42,13 +42,13 @@ const FLOAT_COUNTS = {
 } as const
 
 const DEFAULT_GENERATION_SETTINGS = {
-  steps: 20,
+  steps: 4,
   guidanceScale: 3,
   shift: 3,
   seed: 42,
 } as const
 
-const STEP_PRESETS = [4, 8, 12, 20, 32, 50] as const
+const STEP_PRESETS = [4, 20] as const
 
 const PLY_FLOATS_PER_GAUSSIAN = 17
 const SPLAT_BYTES_PER_GAUSSIAN = 32
@@ -57,7 +57,7 @@ const MAX_PROGRESS_RECORDS = 5_000
 const MAX_RUN_HISTORY = 20
 
 interface GenerationParameters {
-  steps: number
+  steps: 4 | 20
   guidanceScale: number
   shift: number
   seed: number
@@ -297,8 +297,8 @@ function createInjectedControls(): InjectedControls {
     'Sampling steps',
     'e2e-steps',
     DEFAULT_GENERATION_SETTINGS.steps,
-    1,
-    100,
+    4,
+    20,
     1,
   )
 
@@ -563,14 +563,24 @@ function parseInteger(
   return value
 }
 
+function parseSamplingSteps(input: HTMLInputElement): 4 | 20 {
+  const value = parseInteger(
+    input,
+    'Sampling steps',
+    4,
+    20,
+  )
+
+  if (value !== 4 && value !== 20) {
+    throw new Error('Sampling steps must use the supported 4-step or 20-step schedule.')
+  }
+
+  return value
+}
+
 function selectedGenerationParameters(): GenerationParameters {
   return {
-    steps: parseInteger(
-      injectedControls.stepsInput,
-      'Sampling steps',
-      1,
-      100,
-    ),
+    steps: parseSamplingSteps(injectedControls.stepsInput),
     guidanceScale: parseFiniteNumber(
       injectedControls.guidanceInput,
       'Guidance scale',

@@ -6,6 +6,7 @@ These examples are contract fixtures for the intended `@ai3d/triposplat-webgpu` 
 
 | Example | Demonstrates |
 | --- | --- |
+| [`direct/`](direct/) | copy-ready image input to PLY and `.splat`, browser downloads, and an optional server config endpoint |
 | [`vanilla/`](vanilla/) | plain browser ESM lifecycle and local file input |
 | [`vite/main.ts`](vite/main.ts) | normal package import and Vite worker handling |
 | [`react/TripoSplatPanel.tsx`](react/TripoSplatPanel.tsx) | component lifecycle, progress, repeated input, cleanup |
