@@ -14,15 +14,15 @@ A working, browser-local WebGPU engineering preview of [TripoSplat](https://gith
 
 Both deployments are static front ends: the model package is fetched directly from [Yosun/TripoSplat-WebGPU](https://huggingface.co/Yosun/TripoSplat-WebGPU), while model inference and exports run locally in the browser. The model layer does not upload source pixels, although deployment analytics, CDN logs, browser extensions, and an image URL's host are separate privacy considerations.
 
-### Recorded result videos
+### Recorded result animations
 
-These are browser recordings from the tester results:
+These are animated WebP browser recordings from the tester results:
 
 <table>
   <tr>
-    <td><strong>Cartoon House</strong><br><video controls preload="metadata" width="320" src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/_testers/results/Cartoon%20House/cartoon.house.webm"></video></td>
-    <td><strong>Women's Shoes</strong><br><video controls preload="metadata" width="320" src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/_testers/results/Womens%20Shoes%20Red/womens.shoes.webm"></video></td>
-    <td><strong>Corgi CEO Basket</strong><br><video controls preload="metadata" width="320" src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/_testers/results/corgi.ceo-basket/corgi.ceo-basket.webm"></video></td>
+    <td><strong>Cartoon House</strong><br><img src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/_testers/results/Cartoon%20House/cartoon.house.webp" alt="Cartoon House" width="320"></td>
+    <td><strong>Women's Shoes</strong><br><img src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/_testers/results/Womens%20Shoes%20Red/womens.shoes.webp" alt="Women's Shoes" width="320"></td>
+    <td><strong>Corgi CEO Basket</strong><br><img src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/_testers/results/corgi.ceo-basket/corgi.ceo-basket.webp" alt="Corgi CEO Basket" width="320"></td>
   </tr>
 </table>
 
