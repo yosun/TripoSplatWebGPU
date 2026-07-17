@@ -2,4 +2,6 @@ public/models/*.onnx
 public/models/*.onnx.data
 public/models/**/*.onnx
 public/models/**/*.onnx.data
+public/models/triposplat-context0-k256/
+public/_testers/
 public/fixtures/generated/

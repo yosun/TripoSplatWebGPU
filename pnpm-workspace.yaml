@@ -2,4 +2,7 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+  onnxruntime-node: false
   protobufjs: true
+  reconstruction-image-prep@https://codeload.github.com/yosun/ai-image-prep/tar.gz/af80ef43f101ebdf6c7da3933b3be47662dd0169: true
+  sharp: true

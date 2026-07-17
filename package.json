@@ -30,6 +30,7 @@
     "onnxruntime-web": "1.27.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "reconstruction-image-prep": "github:yosun/ai-image-prep#af80ef43f101ebdf6c7da3933b3be47662dd0169",
     "three": "^0.183.1"
   },
   "devDependencies": {

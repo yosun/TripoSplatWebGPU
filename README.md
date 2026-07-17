@@ -1,26 +1,32 @@
 # TripoSplat WebGPU
 
-[![Vercel deployment](https://img.shields.io/badge/Vercel-Image%20to%203D%20runner-c6ff4a?logo=vercel&logoColor=black)](https://triposplat-webgpu.vercel.app/e2e-web)
+[![Package validation](https://github.com/yosun/TripoSplatWebGPU/actions/workflows/package-validation.yml/badge.svg)](https://github.com/yosun/TripoSplatWebGPU/actions/workflows/package-validation.yml)
+![WebGPU required](https://img.shields.io/badge/WebGPU-required-4285F4)
+[![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-browser--local%20demo-FFD21E)](https://huggingface.co/spaces/Yosun/TripoSplat-WebGPU-Demo)
+[![Vercel demo](https://img.shields.io/badge/Vercel-browser--local%20demo-c6ff4a?logo=vercel&logoColor=black)](https://triposplat-webgpu.vercel.app/e2e-web)
 
-An in-progress browser-local WebGPU port of [TripoSplat](https://github.com/VAST-AI-Research/TripoSplat), built from the [ml-sharp-web](https://github.com/bring-shrubbery/ml-sharp-web) application chassis. The official TripoSplat PyTorch implementation is the numerical source of truth. The existing SHARP path remains available as a known-good browser inference baseline.
+A working, browser-local WebGPU engineering preview of [TripoSplat](https://github.com/VAST-AI-Research/TripoSplat), built from the [ml-sharp-web](https://github.com/bring-shrubbery/ml-sharp-web) application chassis. It selects an image, runs the model pipeline locally in the browser, displays the resulting Gaussian scene, and exports binary PLY or `.splat` files. The official TripoSplat PyTorch implementation remains the numerical source of truth; the existing SHARP path remains a known-good browser inference baseline.
 
-## The experiment
+## Try the browser-local demos
 
-This is a genuinely ambitious attempt to port a CUDA-based AI 3D-generation pipeline to browser-native WebGPU. The project uses Codex GPT 5.6 Sol Ultra and GPT 5.6 Sol Max in Kiro as implementation collaborators to replace the traditional NVIDIA/CUDA stack, terminal workflow, environment setup, and local dependency installation with a local browser experience.
+- **[Hugging Face Space](https://huggingface.co/spaces/Yosun/TripoSplat-WebGPU-Demo)** — static Vite demo, with no Hugging Face inference compute.
+- **[Vercel runner](https://triposplat-webgpu.vercel.app/e2e-web)** — public browser runner; [`/e2e-lab.html`](https://triposplat-webgpu.vercel.app/e2e-lab) is the fixture-driven qualification surface.
 
-The aim is to make advanced AI 3D generation more accessible to GPU-poor MacBook users, students, independent developers, and anyone without an expensive GPU. If a device passes the browser compatibility check, it can generate an asset locally on its existing hardware—without a terminal, an installation, or a cloud GPU bill for inference. This remains an engineering preview: support, memory behavior, and numerical quality are still under qualification.
+Both deployments are static front ends: the model package is fetched directly from [Yosun/TripoSplat-WebGPU](https://huggingface.co/Yosun/TripoSplat-WebGPU), while model inference and exports run locally in the browser. The model layer does not upload source pixels, although deployment analytics, CDN logs, browser extensions, and an image URL's host are separate privacy considerations.
+
+The current runner source accepts PNG, WebP, JPEG, and AVIF. Alpha-bearing images are ready to run; opaque photos automatically start the browser-local preparation path, which removes the background, frames the subject, and produces the model-ready 1024px input. Its preparation model is fetched and cached separately on first use. This is a practical input workflow, not a claim of numerical or visual-quality parity for background removal.
+
+## Before you run
+
+- Use desktop Chrome with WebGPU. The only recorded qualification environment is Chrome 150 on an Apple M3 Max with 128 GB unified memory; Edge, 16 GB Apple Silicon, Safari, Firefox, and Windows GPUs are not yet qualified.
+- Allow roughly 6.47 GB for the first verified model download and browser cache. Cache persistence depends on browser storage and quota.
+- The public runner requests 20 sampling steps / 40 CFG DiT calls and can take several minutes on the recorded high-end hardware. That path executes but fails its recorded qualification and strict final-state gates.
+
+This is an engineering preview, not a production or broad-hardware support claim. The four-step prepared-image path has a structural/export/viewer pass but misses a stricter diagnostic; official whole-scene and rendered-pixel parity, repeated full-generation memory behavior, and production CDN/OPFS qualification remain open. See [Current status](docs/current-status.md) before integrating or benchmarking.
 
 **[View the source, benchmarks, and issue tracker on GitHub →](https://github.com/yosun/TripoSplatWebGPU)**
 
-## Web runner
-
-**[Launch the TripoSplat WebGPU image-to-spatial-scene runner →](https://triposplat-webgpu.vercel.app/e2e-web)**
-
-The root URL redirects to this public runner. Choose an image from your device or load one from a CORS-enabled URL, then generate. The first run downloads and verifies the canonical 6.465 GB browser-runtime package directly from [Yosun/TripoSplat-WebGPU](https://huggingface.co/Yosun/TripoSplat-WebGPU) and reuses verified OPFS/Cache API storage when available. Source images remain on the device.
-
-The Vercel deployment does not proxy model data: the browser fetches the immutable Hugging Face artifacts directly. The fixture-driven [`/e2e-lab.html`](https://triposplat-webgpu.vercel.app/e2e-lab) remains an engineering qualification surface; it is not the public runner.
-
-## Quick Test
+## Local development
 
 ```bash
 corepack enable
@@ -28,10 +34,26 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the public runner locally at `http://localhost:<PORT>/e2e-web.html`. The deterministic qualification lab remains available at `http://localhost:<PORT>/e2e-lab.html`.
+Open `http://localhost:<PORT>/e2e-web.html`. Test inputs and recorded outputs are stored in [`public/_testers`](https://github.com/yosun/TripoSplatWebGPU/tree/main/public/_testers).
 
-Our test inputs and recorded outputs are stored in [`public/_testers`](https://github.com/yosun/TripoSplatWebGPU/tree/main/public/_testers).
+## Hugging Face Space deployment
 
+The dedicated [`huggingface-space/README.md`](huggingface-space/README.md) is the Space card and contains the `sdk: static` metadata. Keeping it separate prevents Hugging Face configuration from leaking into the project README. During deployment, its contents must become the Space repository's root `README.md` because nested metadata is not interpreted.
+
+Build locally to avoid depending on Hugging Face's custom build environment. The Vite build intentionally excludes local model artifacts and deterministic fixtures; browsers retrieve the versioned model manifest and files directly from the model repository.
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build
+hf upload Yosun/TripoSplat-WebGPU-Demo dist . \
+  --repo-type space \
+  --commit-message 'Deploy TripoSplat WebGPU demo'
+hf repos cp huggingface-space/README.md \
+  hf://spaces/Yosun/TripoSplat-WebGPU-Demo/README.md
+```
+
+Upload the Space card after the bundle because `dist/` does not contain `README.md`. Do not upload local model artifacts, credentials, caches, or uncommitted experiment files. Hugging Face may require a paid plan or account credits to activate updated Static Space hosting; check current Spaces pricing before deployment.
 
 
 > **Current milestone, not a production release.** The alpha `@ai3d/triposplat-webgpu` workspace package contains the five-stage browser executor and a complete 6.465 GB fp32 manifest. A measured prepared-image run now completes the entire packaged browser path, exports 262,144 finite Gaussians, and loads the PLY into the retained browser viewer with a live canvas. DINOv3, Flux VAE, one DiT invocation, the full eight-level octree trajectory, and the raw Gaussian decoder boundary also pass their recorded Chrome/WebGPU gates. The four-step loop passes its qualification envelope but misses a stricter diagnostic; the measured 20-step loop fails its final-state gate. Official whole-scene/render parity, bundled BiRefNet, Edge/16 GB qualification, and production memory measurements remain release blockers. See [Current status](docs/current-status.md) before integrating or benchmarking this work.

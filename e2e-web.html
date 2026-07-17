@@ -35,7 +35,7 @@ After that, it is ready to run again without another model download.</p>
       <div class="web-workspace">
         <section class="web-controls panel" aria-labelledby="source-heading">
           <div class="panel-heading"><div><span class="section-index">STEP 1 / IMAGE</span><h2 id="source-heading">Choose a starting image</h2></div><span class="local-badge">ON DEVICE</span></div>
-          <p class="panel-copy">Use an alpha-bearing PNG or WebP for best results. Transparent background tells the model what to turn into a scene.</p>
+          <p class="panel-copy">Use a transparent PNG or WebP, or prepare an opaque photo locally before generation. The processor removes the background, frames the subject, and creates the official 1024px TripoSplat input.</p>
           <input id="image-file" type="file" accept="image/png,image/webp,image/jpeg,image/avif" hidden />
           <button id="choose-file" class="file-picker" type="button"><span>Choose image from your computer</span><b>Browse</b></button>
           <label class="url-label" for="image-url"><span>Or start from an image URL</span><small id="image-url-help">The image host must allow browser CORS access.</small></label>
@@ -46,6 +46,12 @@ After that, it is ready to run again without another model download.</p>
             <figcaption>Loaded source image</figcaption>
           </figure>
           <div id="image-summary" class="image-summary" data-state="empty" aria-live="polite">No image selected yet.</div>
+          <section class="image-preparation" aria-labelledby="image-preparation-heading">
+            <div><span class="section-index">OPTIONAL / LOCAL PROCESSING</span><h3 id="image-preparation-heading">Prepare a photo for TripoSplat</h3></div>
+            <p>Opaque photos start background removal and the official subject crop automatically in this browser. Your pixels stay on this device; use the button to process again.</p>
+            <button id="prepare-image" type="button" disabled><span>Process image locally</span><b aria-hidden="true">↗</b></button>
+            <p id="image-preparation-status" class="image-preparation-status" data-state="idle" role="status" aria-live="polite">Choose an image to enable local processing.</p>
+          </section>
           <button id="drop-zone" class="drop-zone" type="button">Or drag an image here</button>
           <a class="continue-to-engine" href="#model-heading">Continue to browser engine <span aria-hidden="true">↓</span></a>
         </section>
@@ -83,7 +89,7 @@ After that, it is ready to run again without another model download.</p>
         </section>
         <div class="secondary-actions"><button id="cancel" type="button" disabled>Cancel current operation</button><button id="clear-cache" type="button">Clear cached model files</button></div>
         <div id="diagnostics" class="diagnostics" hidden><p id="diagnostic-message"></p><details><summary>Technical details</summary><pre id="diagnostic-details"></pre></details></div>
-        <p class="privacy-note">Your image stays on this device. Only the manifest and browser-runtime model artifacts are requested from the official <a href="https://huggingface.co/Yosun/TripoSplat-WebGPU/">Hugging Face package</a> unless you explicitly choose a different server. Opaque photos currently need a browser-local background remover; use a transparent PNG or WebP.</p>
+        <p class="privacy-note">Your image stays on this device. TripoSplat artifacts are requested from the official <a href="https://huggingface.co/Yosun/TripoSplat-WebGPU/">Hugging Face package</a> unless you choose another server. When you select local image processing, its browser-local background-removal model is fetched and cached separately; transparent PNG or WebP files do not need that step.</p>
       </section>
       <section id="browser-experiment" class="experiment-panel panel" aria-labelledby="experiment-heading">
         <div class="experiment-intro"><span class="section-index">WHY THIS MATTERS</span><h2 id="experiment-heading">A monumental attempt to put CUDA-era 3D generation in reach of more people.</h2></div>
