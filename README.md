@@ -90,11 +90,18 @@ Upload the Space card after the bundle because `dist/` does not contain `README.
 
 “PASS” above means the recorded fixture met its declared numerical thresholds. It does not establish general image quality, end-to-end correctness, leak-free repeated generation, or support on untested devices.
 
-## Current DiT experiment
+## Key findings
 
-An opt-in `--collapsed-unconditional-context` DiT export is under investigation to localize the remaining unconditional-context reduction error. It still accepts the normal public conditioning tensors, passes them through both official embedders, retains one representative context token, and applies a `log(4101)` attention bias to preserve the aggregate contribution of the 4,101 identical zero-conditioning keys.
+> **Development disclosure:** This entire WebGPU port was made using **Codex GPT 5.6 Ultra** during #OpenAIBuildWeek.
 
-This is an **unconditional-only diagnostic graph**: both `feature1` and `feature2` must be exactly zero, it cannot replace the canonical conditional/unconditional graph, and it is not part of the browser manifest. It has no recorded parity result yet. Export and validate it separately with the [TripoSplat script guide](scripts/triposplat/README.md); only an untouched-official and ONNX Runtime parity pass can promote it beyond this experiment.
+- **The packaged browser-local pipeline works end to end at the structural level.** The recorded prepared-image run completed DINOv3, Flux VAE, eight DiT calls, eight octree levels, Gaussian decoding, PLY/`.splat` export, and viewer loading. It produced 262,144 finite Gaussians. This is a structural/export/viewer pass, not a whole-scene numerical or rendered-pixel parity claim.
+- **The isolated fp32 stages are strongly validated on the recorded fixture.** DINOv3, Flux VAE, one DiT invocation, the complete eight-level octree trajectory, and the raw Gaussian decoder pass their declared browser gates. The four-step CFG/Euler loop completes and passes its qualification envelope, while still failing the separately recorded stricter latent diagnostic.
+- **The canonical 20-step path completes but is not parity-qualified.** All 40 WebGPU DiT calls finish without fallback, but accumulated latent drift fails both qualification and strict final-state gates (`0.0487093` maximum absolute error; `0.9999996593` cosine similarity).
+- **The remaining DiT discrepancy has been localized.** The first material conditional/unconditional split occurs in `context_refiner.0` attention at probability×V accumulation on the all-zero unconditional branch. ONNX Runtime CPU reproduces the initiating discrepancy, so it is not WebGPU-only; WebGPU introduces additional separation. The official sampler, CFG/Euler arithmetic, standalone octree, and standalone Gaussian decoder are not implicated as the initiating cause.
+- **The best bounded reduction candidate was a no-go.** K=256 probability×V chunking improved complete 20-step max/mean/RMSE error by approximately 14.6%/31.5%/30.3%, but remained outside tolerance, ran slower, and lacked a controlled paired visual comparison. The canonical graph and manifest therefore remain unchanged.
+- **The evidence is deliberately narrow.** Headline measurements come from Chrome 150 with ONNX Runtime WebGPU 1.27 on one Apple M3 Max with 128 GB unified memory. Edge, 16 GB Apple Silicon, other Apple and Windows GPUs, Safari, Firefox, repeated-generation behavior, and peak WebGPU/unified-memory use remain unqualified.
+
+See the [current status](docs/current-status.md), [20-step quality investigation](docs/20-step-quality-investigation.md), [attention reduction parity report](ATTENTION_REDUCTION_PARITY.md), and [compatibility and benchmarks](docs/compatibility-and-benchmarks.md) for evidence, thresholds, timings, and limitations.
 
 ## Measured browser results
 
