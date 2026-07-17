@@ -1,5 +1,9 @@
 # TripoSplat WebGPU
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/corgi.ceo_image_header.social.jpg" alt="TripoSplat WebGPU — browser-local image to 3D" />
+</p>
+
 [![Package validation](https://github.com/yosun/TripoSplatWebGPU/actions/workflows/package-validation.yml/badge.svg)](https://github.com/yosun/TripoSplatWebGPU/actions/workflows/package-validation.yml)
 ![WebGPU required](https://img.shields.io/badge/WebGPU-required-4285F4)
 [![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-browser--local%20demo-FFD21E)](https://huggingface.co/spaces/Yosun/TripoSplat-WebGPU-Demo)

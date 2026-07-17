@@ -10,7 +10,8 @@ import { resolve } from 'node:path'
  * diagnostic graphs that intentionally share hard-linked sidecars. Vite's
  * ordinary public-directory copy expands those links into many gigabytes.
  *
- * Only the two ORT WASM fallback assets are application-owned static files.
+ * Only the ORT WASM fallback assets and the social-preview image are
+ * application-owned static files.
  */
 function copyRuntimeAssets() {
   return {
@@ -22,6 +23,10 @@ function copyRuntimeAssets() {
         recursive: true,
       })
       cpSync(resolve('public/vite.svg'), resolve(outputDirectory, 'vite.svg'))
+      cpSync(
+        resolve('public/corgi.ceo_image_header.social.jpg'),
+        resolve(outputDirectory, 'corgi.ceo_image_header.social.jpg'),
+      )
     },
   }
 }
