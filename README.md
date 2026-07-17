@@ -1,7 +1,7 @@
 # TripoSplat WebGPU
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/corgi.ceo_image_header.social.jpg" alt="TripoSplat WebGPU — browser-local image to 3D" />
+  <img src="./public/corgi.ceo_image_header.social.jpg" alt="TripoSplat WebGPU — browser-local image to 3D" />
 </p>
 
 [![Package validation](https://github.com/yosun/TripoSplatWebGPU/actions/workflows/package-validation.yml/badge.svg)](https://github.com/yosun/TripoSplatWebGPU/actions/workflows/package-validation.yml)
