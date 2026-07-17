@@ -14,6 +14,20 @@ A working, browser-local WebGPU engineering preview of [TripoSplat](https://gith
 
 Both deployments are static front ends: the model package is fetched directly from [Yosun/TripoSplat-WebGPU](https://huggingface.co/Yosun/TripoSplat-WebGPU), while model inference and exports run locally in the browser. The model layer does not upload source pixels, although deployment analytics, CDN logs, browser extensions, and an image URL's host are separate privacy considerations.
 
+### Recorded result videos
+
+These are browser recordings from the tester results:
+
+<table>
+  <tr>
+    <td><strong>Cartoon House</strong><br><video controls preload="metadata" width="320" src="public/_testers/results/Cartoon%20House/cartoon.house.webm"></video></td>
+    <td><strong>Women's Shoes</strong><br><video controls preload="metadata" width="320" src="public/_testers/results/Womens%20Shoes%20Red/womens.shoes.webm"></video></td>
+    <td><strong>Corgi CEO Basket</strong><br><video controls preload="metadata" width="320" src="public/_testers/results/corgi.ceo-basket/corgi.ceo-basket.webm"></video></td>
+  </tr>
+</table>
+
+The original files are available in [`public/_testers/results`](public/_testers/results).
+
 The current runner source accepts PNG, WebP, JPEG, and AVIF. Alpha-bearing images are ready to run; opaque photos automatically start the browser-local preparation path, which removes the background, frames the subject, and produces the model-ready 1024px input. Its preparation model is fetched and cached separately on first use. This is a practical input workflow, not a claim of numerical or visual-quality parity for background removal.
 
 ## Before you run
