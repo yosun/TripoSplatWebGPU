@@ -20,9 +20,9 @@ These are browser recordings from the tester results:
 
 <table>
   <tr>
-    <td><strong>Cartoon House</strong><br><video controls preload="metadata" width="320" src="public/_testers/results/Cartoon%20House/cartoon.house.webm"></video></td>
-    <td><strong>Women's Shoes</strong><br><video controls preload="metadata" width="320" src="public/_testers/results/Womens%20Shoes%20Red/womens.shoes.webm"></video></td>
-    <td><strong>Corgi CEO Basket</strong><br><video controls preload="metadata" width="320" src="public/_testers/results/corgi.ceo-basket/corgi.ceo-basket.webm"></video></td>
+    <td><strong>Cartoon House</strong><br><video controls preload="metadata" width="320" src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/_testers/results/Cartoon%20House/cartoon.house.webm"></video></td>
+    <td><strong>Women's Shoes</strong><br><video controls preload="metadata" width="320" src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/_testers/results/Womens%20Shoes%20Red/womens.shoes.webm"></video></td>
+    <td><strong>Corgi CEO Basket</strong><br><video controls preload="metadata" width="320" src="https://raw.githubusercontent.com/yosun/TripoSplatWebGPU/main/public/_testers/results/corgi.ceo-basket/corgi.ceo-basket.webm"></video></td>
   </tr>
 </table>
 
